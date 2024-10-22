@@ -2,15 +2,16 @@ package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
 import org.springframework.boot.SpringApplication;
 
+import java.util.List;
+
 public class AutoMigrationApplication {
     public static void main(String[] args) {
 
         CloneProject cloneProject = new CloneProject();
+        List<String> groupNames = cloneProject.getServiceName("A_E-Commerce", "User Role-Based");
 
-        int numberOfGroups = cloneProject.getNumberOfGroups("A_E-Commerce", "User Role-Based");
-
-        for (int i = 1; i <= numberOfGroups; i++) {
-            cloneProject.copyDirectory("doc/E-Commerce-Application", "test-" + i);
+        for (String groupName : groupNames) {
+            cloneProject.copyDirectory("doc/E-Commerce-Application", groupName);
         }
 
 
