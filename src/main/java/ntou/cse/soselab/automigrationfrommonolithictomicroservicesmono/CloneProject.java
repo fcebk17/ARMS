@@ -14,28 +14,22 @@ public class CloneProject {
         Path targetDir1 = Paths.get(Dir1);
 
         try {
-            copyDirectoryLogic(sourceDir,targetDir1);
+            Files.walk(sourceDir).forEach(sourcePath -> {
+                try {
+                    Path targetPath = targetDir1.resolve(sourceDir.relativize(sourcePath));
+                    if (Files.isDirectory(sourcePath)) {
+                        Files.createDirectories(targetPath);
+                    } else {
+                        Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
             System.out.println("Directory copied successfully.");
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-    }
-
-    private void copyDirectoryLogic(Path source, Path target) throws IOException {
-        Files.walk(source).forEach(sourcePath -> {
-            try {
-                Path targetPath = target.resolve(source.relativize(sourcePath));
-                if (Files.isDirectory(sourcePath)) {
-                    Files.createDirectories(targetPath);
-                }
-                else {
-                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
     }
 
     public int getNumberOfGroups(String projectName, String concept) {
