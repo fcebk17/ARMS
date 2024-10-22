@@ -6,7 +6,13 @@ public class AutoMigrationApplication {
     public static void main(String[] args) {
 
         CloneProject cloneProject = new CloneProject();
-        cloneProject.copyDirectory("doc/E-Commerce-Application", "test-1");
-        cloneProject.copyDirectory("doc/E-Commerce-Application", "test-2");
+
+        int numberOfGroups = cloneProject.getNumberOfGroups("A_E-Commerce", "User Role-Based");
+
+        for (int i = 1; i <= numberOfGroups; i++) {
+            cloneProject.copyDirectory("doc/E-Commerce-Application", "test-" + i);
+        }
+
+
     }
 }
