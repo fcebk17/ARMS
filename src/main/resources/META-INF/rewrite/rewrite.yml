@@ -1,0 +1,10 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: ntou.cse.soselab.ChangeMavenSettings
+displayName: Change Maven Settings
+recipeList:
+  - org.openrewrite.maven.ChangeManagedDependencyGroupIdAndArtifactId:
+      oldGroupId: com.app
+      oldArtifactId: ECommerceApplication
+      newGroupId: ntou.cse.soselab
+      newArtifactId: admin-service
