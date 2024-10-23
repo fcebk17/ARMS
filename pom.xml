@@ -68,6 +68,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.openrewrite</groupId>
+            <artifactId>rewrite-maven</artifactId>
+            <version>8.37.1</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.openrewrite.recipe</groupId>
             <artifactId>rewrite-java-dependencies</artifactId>
         </dependency>
@@ -104,17 +110,16 @@
                 <version>5.42.0</version>
                 <configuration>
                     <activeRecipes>
-                        <recipe>org.openrewrite.staticanalysis.CodeCleanup</recipe>
                         <recipe>ntou.cse.soselab.ChangeMavenSettings</recipe>
                     </activeRecipes>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>ntou.cse.soselab</groupId>
-                        <artifactId>auto-migration-from-monolithic-to-microservices-mono</artifactId>
-                        <version>0.0.1-SNAPSHOT</version>
-                    </dependency>
-                </dependencies>
+<!--                <dependencies>-->
+<!--                    <dependency>-->
+<!--                        <groupId>ntou.cse.soselab</groupId>-->
+<!--                        <artifactId>auto-migration-from-monolithic-to-microservices-mono</artifactId>-->
+<!--                        <version>0.0.1-SNAPSHOT</version>-->
+<!--                    </dependency>-->
+<!--                </dependencies>-->
             </plugin>
         </plugins>
         <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
