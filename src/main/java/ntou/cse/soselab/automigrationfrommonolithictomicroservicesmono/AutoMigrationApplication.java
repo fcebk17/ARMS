@@ -1,7 +1,5 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
-import org.springframework.boot.SpringApplication;
-
 import java.util.List;
 
 public class AutoMigrationApplication {
@@ -12,8 +10,18 @@ public class AutoMigrationApplication {
 
         for (String groupName : groupNames) {
             cloneProject.copyDirectory("doc/E-Commerce-Application", groupName);
-        }
 
+            // modify pom.xml by JDOM
+            try {
+                ModifyMavenSetting modifyMavenSetting = new ModifyMavenSetting(groupName +"/ECommerceApplication/pom.xml");
+                modifyMavenSetting.loadPomFile();
+                modifyMavenSetting.modifyArtifactId(groupName);
+                modifyMavenSetting.modifyName(groupName);
+                modifyMavenSetting.savePomFile();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
     }
 }
