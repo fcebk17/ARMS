@@ -35,7 +35,7 @@ public class ModifyMavenSetting {
         modifyElement("name", newName);
     }
 
-    public void modifyElement(String elementName, String newValue) {
+    private void modifyElement(String elementName, String newValue) {
         if (document == null) {
             System.out.println("Document not loaded. Call loadPomFile() first.");
             return;
