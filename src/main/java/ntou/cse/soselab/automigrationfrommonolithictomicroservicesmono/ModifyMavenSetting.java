@@ -21,9 +21,9 @@ public class ModifyMavenSetting {
 
     // load pom.xml
     public void loadPomFile() throws Exception {
-        SAXBuilder saxBuilder = new SAXBuilder();
+        SAXBuilder saxBuilder = new SAXBuilder(); // 將 XML 轉換成 JDOM 的 Document 物件
         File pomFile = new File(pomFilePath);
-        document = saxBuilder.build(pomFile);
+        document = saxBuilder.build(pomFile); // document 會包含 pom.xml 的所有內容，可以使用 JDOM API 操作
         System.out.println("POM file loaded successfully.");
     }
 
@@ -41,14 +41,14 @@ public class ModifyMavenSetting {
             return;
         }
 
-        Element rootElement = document.getRootElement();
+        Element rootElement = document.getRootElement(); // `<project>` element
         Element ModifiedElement = rootElement.getChild(elementName, rootElement.getNamespace());
 
         if (ModifiedElement != null) {
             ModifiedElement.setText(newValue);
-            System.out.println(elementName + "成功修改為: " + newValue);
+            System.out.println(elementName + " has been modified successfully: " + newValue);
         } else {
-            System.out.printf("找不到 %s 元素", elementName);
+            System.out.printf("Cannot find %s element", elementName);
         }
     }
 
