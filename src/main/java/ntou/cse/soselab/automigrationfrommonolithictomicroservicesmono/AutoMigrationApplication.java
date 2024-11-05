@@ -1,15 +1,19 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class AutoMigrationApplication {
     public static void main(String[] args) {
 
         CloneProject cloneProject = new CloneProject();
         List<String> groupNames = cloneProject.getServiceName("A_E-Commerce", "User Role-Based");
+        List<String> copiedDirectories = new ArrayList<>();
 
         for (String groupName : groupNames) {
             cloneProject.copyDirectory("doc/E-Commerce-Application", groupName);
+            copiedDirectories.add("/" + groupName);
 
             // modify pom.xml by JDOM
             try {
@@ -22,6 +26,9 @@ public class AutoMigrationApplication {
                 e.printStackTrace();
             }
         }
+
+        DeleteEndpointByJavaParser deleteEndpointByJavaParser = new DeleteEndpointByJavaParser();
+        List<Map<String, Object>> endpointGroupNames = deleteEndpointByJavaParser.getEndpointGroupMapping("A_E-Commerce", "User Role-Based");
 
     }
 }
