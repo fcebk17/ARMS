@@ -1,14 +1,16 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.*;
 
 public class DeleteEndpointByJavaParser {
 
@@ -48,7 +50,24 @@ public class DeleteEndpointByJavaParser {
         return endpointGroupMappingList;
     }
 
+    public void classifyEndpoints(List<Map<String, Object>> endpointGroupMappingList, List<String> groupNames) {
+        Map<String, List<String>> groupEndpoints = new LinkedHashMap<>();
 
+        // initialize groupEndpoints with empty lists
+        for (String groupName : groupNames) {
+            groupEndpoints.put(groupName, new ArrayList<>());
+        }
 
-//    private void AccessController
+        // traverse endpointGroupMappingList and classify endpoints base on `service` value
+        for (Map<String, Object> endpoint : endpointGroupMappingList) {
+            int serviceIndex = (int) endpoint.get("service") - 1;
+            String endpointName = (String) endpoint.get("endpoint");
+
+            String groupName = groupNames.get(serviceIndex);
+            groupEndpoints.get(groupName).add(endpointName);
+        }
+
+        System.out.println(groupEndpoints);
+    }
+
 }

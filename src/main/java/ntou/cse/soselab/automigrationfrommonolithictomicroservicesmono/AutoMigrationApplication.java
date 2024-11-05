@@ -9,11 +9,9 @@ public class AutoMigrationApplication {
 
         CloneProject cloneProject = new CloneProject();
         List<String> groupNames = cloneProject.getServiceName("A_E-Commerce", "User Role-Based");
-        List<String> copiedDirectories = new ArrayList<>();
 
         for (String groupName : groupNames) {
             cloneProject.copyDirectory("doc/E-Commerce-Application", groupName);
-            copiedDirectories.add("/" + groupName);
 
             // modify pom.xml by JDOM
             try {
@@ -29,6 +27,7 @@ public class AutoMigrationApplication {
 
         DeleteEndpointByJavaParser deleteEndpointByJavaParser = new DeleteEndpointByJavaParser();
         List<Map<String, Object>> endpointGroupNames = deleteEndpointByJavaParser.getEndpointGroupMapping("A_E-Commerce", "User Role-Based");
+        deleteEndpointByJavaParser.classifyEndpoints(endpointGroupNames, groupNames);
 
     }
 }
