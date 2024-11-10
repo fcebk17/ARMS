@@ -66,7 +66,6 @@ public class CloneProject {
             Document cluster = clusters.find(query).first();
 
             if (cluster != null) {
-                System.out.println("Cluster document: " + cluster.toJson());  // 調試輸出整個文件內容
 
                 if (cluster.containsKey("groupNames")) {
                     // 取得 groupNames 列表，並提取 serviceName

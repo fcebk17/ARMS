@@ -1,6 +1,8 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class AutoMigrationApplication {
     public static void main(String[] args) {
@@ -23,5 +25,9 @@ public class AutoMigrationApplication {
             }
         }
 
+        DeleteEndpointByJavaParser deleteEndpointByJavaParser = new DeleteEndpointByJavaParser();
+        List<Map<String, Object>> endpointGroupNames = deleteEndpointByJavaParser.getEndpointGroupMapping("A_E-Commerce", "User Role-Based");
+        Map<String, List<String>> groupEndpointsByKey = deleteEndpointByJavaParser.classifyEndpoints(endpointGroupNames, groupNames);
+        deleteEndpointByJavaParser.RestfulMethodRemoval(groupEndpointsByKey);
     }
 }
