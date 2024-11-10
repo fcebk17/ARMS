@@ -27,7 +27,7 @@ public class AutoMigrationApplication {
 
         DeleteEndpointByJavaParser deleteEndpointByJavaParser = new DeleteEndpointByJavaParser();
         List<Map<String, Object>> endpointGroupNames = deleteEndpointByJavaParser.getEndpointGroupMapping("A_E-Commerce", "User Role-Based");
-        deleteEndpointByJavaParser.classifyEndpoints(endpointGroupNames, groupNames);
-
+        Map<String, List<String>> groupEndpointsByKey = deleteEndpointByJavaParser.classifyEndpoints(endpointGroupNames, groupNames);
+        deleteEndpointByJavaParser.RestfulMethodRemoval(groupEndpointsByKey);
     }
 }
