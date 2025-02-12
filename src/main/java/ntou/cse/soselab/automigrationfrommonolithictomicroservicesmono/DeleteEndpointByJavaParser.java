@@ -76,7 +76,8 @@ public class DeleteEndpointByJavaParser {
 
     public void RestfulMethodRemoval(Map<String, List<String>> groupEndpointsByKey) {
         for (String key : groupEndpointsByKey.keySet()) {
-            File projectDir = new File(key);
+            File projectDir = new File("/home/popocorn/output/" + key);
+            System.out.println(projectDir);
             removeMethodInControllerFolder(projectDir, groupEndpointsByKey.get(key));
         }
     }

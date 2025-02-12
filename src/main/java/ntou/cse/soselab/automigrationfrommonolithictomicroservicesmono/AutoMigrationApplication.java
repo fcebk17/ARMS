@@ -11,11 +11,11 @@ public class AutoMigrationApplication {
         List<String> groupNames = cloneProject.getServiceName("A_E-Commerce", "User Role-Based");
 
         for (String groupName : groupNames) {
-            cloneProject.copyDirectory("doc/E-Commerce-Application", groupName);
+            cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", "/home/popocorn/output/" + groupName);
 
             // modify pom.xml by JDOM
             try {
-                ModifyMavenSetting modifyMavenSetting = new ModifyMavenSetting(groupName +"/ECommerceApplication/pom.xml");
+                ModifyMavenSetting modifyMavenSetting = new ModifyMavenSetting("/home/popocorn/output/" + groupName +"/ECommerceApplication/pom.xml");
                 modifyMavenSetting.loadPomFile();
                 modifyMavenSetting.modifyArtifactId(groupName);
                 modifyMavenSetting.modifyName(groupName);
