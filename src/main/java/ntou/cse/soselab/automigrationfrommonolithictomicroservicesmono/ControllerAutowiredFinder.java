@@ -11,16 +11,21 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ControllerAutowiredFinder {
+    private static final String BASE_PATH = "/home/popocorn/output/AdminService";
+    private static final Map<String, List<String>> controllerAutowiredMap = new LinkedHashMap<>();
     public static void main(String[] args) throws IOException {
-        String basePath = "/home/popocorn/output/AdminService";
-        List<File> javaFiles = getJavaFiles(basePath);
+        List<File> javaFiles = getJavaFiles(BASE_PATH);
 
         for (File file : javaFiles) {
             processJavaFile(file, javaFiles);
         }
+
+        System.out.println(controllerAutowiredMap);
     }
 
     private static List<File> getJavaFiles(String basePath) throws IOException {
@@ -65,9 +70,7 @@ public class ControllerAutowiredFinder {
 
             // 如果有找到 @Autowired Interface，輸出結果
             if (!autowiredInterfaces.isEmpty()) {
-                System.out.println("Controller: " + file.getName());
-                autowiredInterfaces.forEach(interfaceName ->
-                        System.out.println("@Autowired Interface: " + interfaceName));
+                controllerAutowiredMap.put(file.getName(), autowiredInterfaces);
             }
         } catch (Exception e) {
             System.err.println("Error parsing file: " + file.getAbsolutePath());
