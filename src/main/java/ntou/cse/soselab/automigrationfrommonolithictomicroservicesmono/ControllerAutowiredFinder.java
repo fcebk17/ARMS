@@ -18,6 +18,7 @@ import java.util.Map;
 public class ControllerAutowiredFinder {
     private final String basePath;
     private final Map<String, List<String>> controllerAutowiredMap;
+    private String packageName;
 
     public ControllerAutowiredFinder(String basePath) {
         this.basePath = basePath;
@@ -33,6 +34,10 @@ public class ControllerAutowiredFinder {
 
     public Map<String, List<String>> getControllerAutowiredMap() {
         return controllerAutowiredMap;
+    }
+
+    public String getPackageName() {
+        return packageName;
     }
 
     private List<File> getJavaFiles() throws IOException {
@@ -56,6 +61,12 @@ public class ControllerAutowiredFinder {
 
             if (!isController) return;
 
+            // 取得 package name
+            packageName = cu.getPackageDeclaration()
+                    .map(pd -> pd.getName().asString())
+                    .orElse("(default package)");
+
+
             // 儲存所有 @Autowired 且為 Interface 的變數型別
             List<String> autowiredInterfaces = new ArrayList<>();
 
@@ -75,10 +86,15 @@ public class ControllerAutowiredFinder {
                 }
             }, null);
 
-            // 如果有找到 @Autowired Interface，存入 Map
+            // 如果有找到 @Autowired Interface，存入 Map，並加上 package name
             if (!autowiredInterfaces.isEmpty()) {
-                controllerAutowiredMap.put(file.getName(), autowiredInterfaces);
+                String key = packageName + "." + file.getName(); // 使用 package name + 檔案名稱作為 key
+                controllerAutowiredMap.put(key, autowiredInterfaces);
             }
+
+            // Debug: 印出找到的 package 和檔案名稱
+//            System.out.println("Processed: " + packageName + "." + file.getName());
+
         } catch (Exception e) {
             System.err.println("Error parsing file: " + file.getAbsolutePath());
         }
