@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.*;
 
 public class AutoMigrationApplication {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
 
         CloneProject cloneProject = new CloneProject();
         List<String> groupNames = cloneProject.getServiceName("A_E-Commerce", "User Role-Based");
@@ -61,6 +61,20 @@ public class AutoMigrationApplication {
         }
         System.out.println(serviceMap);
         PACKAGE_NAME = removeLastPackageSegment(packageName);
+
+        // Search each interface implementation class
+        // Not yet finished
+        for (String groupName : groupNames) {
+            try {
+                InterfaceImplementationFinder interfaceImplementationFinder = new InterfaceImplementationFinder(BASE_PATH + groupName, "com.app.services.AddressService", PACKAGE_NAME);
+                interfaceImplementationFinder.printImplementations();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+
+
     }
 
     // 刪除 package 名稱的最後一層 (e.g., com.app.controllers -> com.app)

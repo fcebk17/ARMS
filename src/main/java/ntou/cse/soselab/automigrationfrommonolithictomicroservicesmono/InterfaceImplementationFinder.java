@@ -8,11 +8,23 @@ import org.reflections.scanners.SubTypesScanner;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashSet;
 import java.util.Set;
 
 public class InterfaceImplementationFinder {
+    private final String projectPath;
+    private final String interfaceClassName;
+    private final String basePackage;
+    private ClassLoader classLoader;
 
-    private static ClassLoader loadExternalClasses(String projectPath) throws Exception {
+    public InterfaceImplementationFinder(String projectPath, String interfaceClassName, String basePackage) throws Exception {
+        this.projectPath = projectPath;
+        this.interfaceClassName = interfaceClassName;
+        this.basePackage = basePackage;
+        this.classLoader = loadExternalClasses();
+    }
+
+    private ClassLoader loadExternalClasses() throws Exception {
         File projectDir = new File(projectPath);
         if (!projectDir.exists() || !projectDir.isDirectory()) {
             throw new IllegalArgumentException("Project directory does not exist: " + projectPath);
@@ -32,7 +44,7 @@ public class InterfaceImplementationFinder {
     }
 
     // 遞迴尋找 `target/classes/` 目錄
-    private static File findTargetClassesDir(File rootDir) {
+    private File findTargetClassesDir(File rootDir) {
         File[] files = rootDir.listFiles();
         if (files == null) return null;
 
@@ -48,32 +60,29 @@ public class InterfaceImplementationFinder {
         return null;
     }
 
-    public static Set<Class<?>> findImplementations(Class<?> interfaceClass, String basePackage) {
+    public Set<Class<?>> findImplementations() throws ClassNotFoundException {
+        // 透過動態加載取得 Interface 的 Class 物件
+        Class<?> targetInterface = Class.forName(interfaceClassName, true, classLoader);
+
+        System.out.println("targetInterface: " + targetInterface);
+
         Reflections reflections = new Reflections(
                 new ConfigurationBuilder()
-                        .setUrls(ClasspathHelper.forPackage(basePackage))
+                        .setUrls(ClasspathHelper.forPackage(basePackage, classLoader))
                         .setScanners(new SubTypesScanner())
         );
 
-        return reflections.getSubTypesOf((Class<Object>) interfaceClass);
+        return reflections.getSubTypesOf((Class<Object>) targetInterface);
     }
 
-    public static void main(String[] args) throws Exception {
-        String adminServicePath = "/home/popocorn/output/CustomerService";  // 目標專案的根目錄
-        String interfaceClassName = "com.app.services.ProductService";  // 目標 Interface (請修改)
-        String targetPackage = "com.app";  // 目標 package (請修改)
-
-        // 1. 動態加載外部專案 classes
-        ClassLoader classLoader = loadExternalClasses(adminServicePath);
-
-        // 2. 透過動態加載取得 Interface 的 Class 物件
-        Class<?> targetInterface = Class.forName(interfaceClassName, true, classLoader);
-
-        // 3. 搜尋 interface 的所有實作類
-        Set<Class<?>> implementations = findImplementations(targetInterface, targetPackage);
-
-        // 4. 列出所有找到的 class
-        implementations.forEach(impl -> System.out.println("Found: " + impl.getName()));
+    public void printImplementations() {
+        try {
+            Set<Class<?>> implementations = findImplementations();
+            implementations.forEach(impl -> System.out.println("Found: " + impl.getName()));
+            // 要再加上判斷條件，如果 implementations 為 @Service
+        } catch (ClassNotFoundException e) {
+            System.err.println("Error: Interface class not found - " + interfaceClassName);
+        }
     }
 }
 
