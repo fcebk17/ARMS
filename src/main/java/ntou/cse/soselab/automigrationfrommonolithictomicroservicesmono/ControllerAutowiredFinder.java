@@ -16,19 +16,26 @@ import java.util.List;
 import java.util.Map;
 
 public class ControllerAutowiredFinder {
-    private static final String BASE_PATH = "/home/popocorn/output/AdminService";
-    private static final Map<String, List<String>> controllerAutowiredMap = new LinkedHashMap<>();
-    public static void main(String[] args) throws IOException {
-        List<File> javaFiles = getJavaFiles(BASE_PATH);
+    private final String basePath;
+    private final Map<String, List<String>> controllerAutowiredMap;
 
+    public ControllerAutowiredFinder(String basePath) {
+        this.basePath = basePath;
+        this.controllerAutowiredMap = new LinkedHashMap<>();
+    }
+
+    public void process() throws IOException {
+        List<File> javaFiles = getJavaFiles();
         for (File file : javaFiles) {
             processJavaFile(file, javaFiles);
         }
-
-        System.out.println(controllerAutowiredMap);
     }
 
-    private static List<File> getJavaFiles(String basePath) throws IOException {
+    public Map<String, List<String>> getControllerAutowiredMap() {
+        return controllerAutowiredMap;
+    }
+
+    private List<File> getJavaFiles() throws IOException {
         List<File> fileList = new ArrayList<>();
         Files.walk(Paths.get(basePath))
                 .filter(Files::isRegularFile)
@@ -37,7 +44,7 @@ public class ControllerAutowiredFinder {
         return fileList;
     }
 
-    private static void processJavaFile(File file, List<File> javaFiles) {
+    private void processJavaFile(File file, List<File> javaFiles) {
         try {
             CompilationUnit cu = StaticJavaParser.parse(file);
 
@@ -68,7 +75,7 @@ public class ControllerAutowiredFinder {
                 }
             }, null);
 
-            // 如果有找到 @Autowired Interface，輸出結果
+            // 如果有找到 @Autowired Interface，存入 Map
             if (!autowiredInterfaces.isEmpty()) {
                 controllerAutowiredMap.put(file.getName(), autowiredInterfaces);
             }
@@ -77,7 +84,7 @@ public class ControllerAutowiredFinder {
         }
     }
 
-    private static boolean isInterface(String className, List<File> javaFiles) {
+    private boolean isInterface(String className, List<File> javaFiles) {
         for (File file : javaFiles) {
             if (file.getName().equals(className + ".java")) {
                 try {
