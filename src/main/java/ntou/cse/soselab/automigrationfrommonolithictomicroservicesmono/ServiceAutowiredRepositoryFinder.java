@@ -54,15 +54,12 @@ public class ServiceAutowiredRepositoryFinder {
                 String repoFile = classToFilePath.get(fullType);
 
                 if (repoFile != null && isRepositoryClass(repoFile)) {
-                    String fieldName = field.getVariable(0).getNameAsString();
-                    // System.out.println("Autowired Repository Found: " + fieldName + " : " + fullType);
-                    repoInfo.add(fieldName);
+                    repoInfo.add(fullType);
                 }
             }
         });
 
-        String simpleServiceName = serviceFullName.substring(serviceFullName.lastIndexOf('.') + 1);
-        autowiredRepositories.put(simpleServiceName, repoInfo);
+        autowiredRepositories.put(serviceFullName, repoInfo);
     }
 
     private void indexJavaFiles(File dir) {
@@ -108,12 +105,12 @@ public class ServiceAutowiredRepositoryFinder {
         }
     }
 
-//    public static void main(String[] args) throws Exception {
-//        ServiceAutowiredRepositoryFinder scanner = new ServiceAutowiredRepositoryFinder(
-//                "/home/popocorn/output/AdminService",
-//                "com.app.services.AddressServiceImpl"
-//        );
-//        scanner.scan();
-//        System.out.println(scanner.getAutowiredRepositories());
-//    }
+    public static void main(String[] args) throws Exception {
+        ServiceAutowiredRepositoryFinder scanner = new ServiceAutowiredRepositoryFinder(
+                "/home/popocorn/output/AdminService",
+                "com.app.services.AddressServiceImpl"
+        );
+        scanner.scan();
+        System.out.println(scanner.getAutowiredRepositories());
+    }
 }
