@@ -79,7 +79,10 @@ public class ControllerAutowiredFinder {
                         fd.getVariables().forEach(var -> {
                             String fieldType = var.getTypeAsString();
                             if (isInterface(fieldType, javaFiles)) {
-                                autowiredInterfaces.add(fieldType);
+                                String qualifiedName = findQualifiedName(fieldType, javaFiles);
+                                if (qualifiedName != null) {
+                                    autowiredInterfaces.add(qualifiedName);
+                                }
                             }
                         });
                     }
@@ -114,5 +117,22 @@ public class ControllerAutowiredFinder {
             }
         }
         return false;
+    }
+
+    private String findQualifiedName(String className, List<File> javaFiles) {
+        for (File file : javaFiles) {
+            if (file.getName().equals(className + ".java")) {
+                try {
+                    CompilationUnit cu = StaticJavaParser.parse(file);
+                    String pkg = cu.getPackageDeclaration()
+                            .map(pd -> pd.getName().asString())
+                            .orElse("");
+                    return pkg.isEmpty() ? className : pkg + "." + className;
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        }
+        return null;
     }
 }
