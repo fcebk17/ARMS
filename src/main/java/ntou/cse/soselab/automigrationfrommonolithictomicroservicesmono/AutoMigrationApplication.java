@@ -13,9 +13,12 @@ public class AutoMigrationApplication {
         String BASE_PATH = "/home/popocorn/output/";
         String packageName = "";
         final String PACKAGE_NAME;
+
         Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
         Map<String, String> interfaceToImplementationMap = new LinkedHashMap<>();
         Set<Map<String, List<String>>> serviceToRepositorySet = new LinkedHashSet<>();
+
+        Map<String, Set<String>> microserviceToRepositoryMap = new HashMap<>();
 
         for (String groupName : groupNames) {
             cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", BASE_PATH + groupName);
@@ -113,6 +116,28 @@ public class AutoMigrationApplication {
             }
         }
         System.out.println("serviceToRepositorySet: " + serviceToRepositorySet);
+
+        // 將每個 microservice 中所使用到的 repository 記錄下來
+        for (String moduleName : controllerToServiceMap.keySet()) {
+            Set<String> repositories = new HashSet<>();
+            Map<String, List<String>> controllers = controllerToServiceMap.get(moduleName);
+
+            for (List<String> serviceInterfaces : controllers.values()) {
+                for (String serviceInterface : serviceInterfaces) {
+                    String impl = interfaceToImplementationMap.get(serviceInterface);
+                    if (impl != null) {
+                        for (Map<String, List<String>> implRepoMap : serviceToRepositorySet) {
+                            if(implRepoMap.containsKey(impl)) {
+                                repositories.addAll(implRepoMap.get(impl));
+                            }
+                        }
+                    }
+                }
+            }
+            microserviceToRepositoryMap.put(moduleName, repositories);
+        }
+
+        System.out.println("microserviceToRepositoryMap: " + microserviceToRepositoryMap);
 
     }
 
