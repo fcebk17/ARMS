@@ -1,21 +1,31 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.security.Provider;
+import java.util.*;
 
 public class AutoMigrationApplication {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         CloneProject cloneProject = new CloneProject();
         List<String> groupNames = cloneProject.getServiceName("A_E-Commerce", "User Role-Based");
 
+        String BASE_PATH = "/home/popocorn/output/";
+        String packageName = "";
+        final String PACKAGE_NAME;
+
+        Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
+        Map<String, String> interfaceToImplementationMap = new LinkedHashMap<>();
+        Set<Map<String, List<String>>> serviceToRepositorySet = new LinkedHashSet<>();
+
+        Map<String, Set<String>> microserviceToRepositoryMap = new HashMap<>();
+
         for (String groupName : groupNames) {
-            cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", "/home/popocorn/output/" + groupName);
+            cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", BASE_PATH + groupName);
 
             // modify pom.xml by JDOM
             try {
-                ModifyMavenSetting modifyMavenSetting = new ModifyMavenSetting("/home/popocorn/output/" + groupName +"/ECommerceApplication/pom.xml");
+                ModifyMavenSetting modifyMavenSetting = new ModifyMavenSetting(BASE_PATH + groupName +"/ECommerceApplication/pom.xml");
                 modifyMavenSetting.loadPomFile();
                 modifyMavenSetting.modifyArtifactId(groupName);
                 modifyMavenSetting.modifyName(groupName);
@@ -25,9 +35,128 @@ public class AutoMigrationApplication {
             }
         }
 
+        // Use JavaParser to delete endpoint of controller
         DeleteEndpointByJavaParser deleteEndpointByJavaParser = new DeleteEndpointByJavaParser();
         List<Map<String, Object>> endpointGroupNames = deleteEndpointByJavaParser.getEndpointGroupMapping("A_E-Commerce", "User Role-Based");
         Map<String, List<String>> groupEndpointsByKey = deleteEndpointByJavaParser.classifyEndpoints(endpointGroupNames, groupNames);
         deleteEndpointByJavaParser.RestfulMethodRemoval(groupEndpointsByKey);
+
+        // Search `@Autowired interfaces in each Controller
+        for (String groupName : groupNames) {
+            ControllerAutowiredFinder controllerAutowiredFinder = new ControllerAutowiredFinder(BASE_PATH + groupName);
+            controllerAutowiredFinder.process();
+            packageName = controllerAutowiredFinder.getPackageName();
+
+            // 取得新的結果
+            Map<String, List<String>> newResults = controllerAutowiredFinder.getControllerAutowiredMap();
+
+            // 如果 serviceMap 內還沒有這個 groupName，則新增
+            controllerToServiceMap.putIfAbsent(groupName, new LinkedHashMap<>());
+
+            // 將新結果合併到 serviceMap
+            for (Map.Entry<String, List<String>> entry : newResults.entrySet()) {
+                String controllerName = entry.getKey();
+                List<String> interfaces = entry.getValue();
+
+                // 如果該 groupName 下的 Controller 已經存在，則合併 Interface 列表
+                controllerToServiceMap.get(groupName).merge(controllerName, interfaces, (existing, newList) -> {
+                    existing.addAll(newList);
+                    return existing;
+                });
+            }
+        }
+        System.out.println("controllerToServiceMap: " + controllerToServiceMap);
+        PACKAGE_NAME = removeLastPackageSegment(packageName);
+
+        // Search each interface implementation class
+        // Not yet finished
+        for (String groupName : groupNames) {
+            Map<String, List<String>> controllerMap = controllerToServiceMap.get(groupName);
+            if (controllerMap == null) continue;
+
+            Set<String> uniqueServiceInterfaces = new HashSet<>();
+            for (List<String> serviceList : controllerMap.values()) {
+                uniqueServiceInterfaces.addAll(serviceList);
+            }
+
+            for (String serviceInterface : uniqueServiceInterfaces) {
+                try {
+                    InterfaceImplementationFinder finder = new InterfaceImplementationFinder(
+                            BASE_PATH + groupName,
+                            serviceInterface,
+                            PACKAGE_NAME
+                    );
+                    finder.printImplementations();
+
+                    Map<String, String> partialMap = finder.getInterfaceToImplementationMap();
+                    System.out.println("Interface to Implementation Map: " + partialMap);
+                    // put into interfaceToImplementationMap
+                    interfaceToImplementationMap.putAll(partialMap);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        System.out.println("interfaceToImplementationMap: " + interfaceToImplementationMap);
+
+        // 找到每個 ServiceImpl 中的 repository
+        for (String groupName : groupNames) {
+            for (String implementation : interfaceToImplementationMap.values()) {
+                ServiceAutowiredRepositoryFinder finder = new ServiceAutowiredRepositoryFinder(BASE_PATH + groupName, implementation);
+                finder.scan();
+
+                Map<String, List<String>> currentResult = finder.getAutowiredRepositories();
+
+                if(!serviceToRepositorySet.contains(currentResult)) {
+                    serviceToRepositorySet.add(new LinkedHashMap<>(currentResult));
+                }
+                // System.out.println("AutowiredRepositories: " + finder.getAutowiredRepositories());
+            }
+        }
+        System.out.println("serviceToRepositorySet: " + serviceToRepositorySet);
+
+        // 將每個 microservice 中所使用到的 repository 記錄下來
+        for (String moduleName : controllerToServiceMap.keySet()) {
+            Set<String> repositories = new HashSet<>();
+            Map<String, List<String>> controllers = controllerToServiceMap.get(moduleName);
+
+            for (List<String> serviceInterfaces : controllers.values()) {
+                for (String serviceInterface : serviceInterfaces) {
+                    String impl = interfaceToImplementationMap.get(serviceInterface);
+                    if (impl != null) {
+                        for (Map<String, List<String>> implRepoMap : serviceToRepositorySet) {
+                            if(implRepoMap.containsKey(impl)) {
+                                repositories.addAll(implRepoMap.get(impl));
+                            }
+                        }
+                    }
+                }
+            }
+            microserviceToRepositoryMap.put(moduleName, repositories);
+        }
+
+        System.out.println("microserviceToRepositoryMap: " + microserviceToRepositoryMap);
+
     }
+
+
+
+
+
+
+
+
+
+
+    // 刪除 package 名稱的最後一層 (e.g., com.app.controllers -> com.app)
+    private static String removeLastPackageSegment(String packageName) {
+        int lastDotIndex = packageName.lastIndexOf(".");
+        if (lastDotIndex != -1) {
+            return packageName.substring(0, lastDotIndex); // 移除最後一層
+        }
+        return packageName; // 如果沒有 `.`，則回傳原本的 package
+    }
+
 }
