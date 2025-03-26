@@ -8,11 +8,12 @@ public class AutoMigrationApplication {
 
         CloneProject cloneProject = new CloneProject();
         List<String> groupNames = cloneProject.getServiceName("A_E-Commerce", "User Role-Based");
+
         String BASE_PATH = "/home/popocorn/output/";
         Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
-        String packageName = "ntou.cse.soselab";
+        String packageName = "";
         final String PACKAGE_NAME;
-
+        Map<String, String> interfaceToImplementationMap = new LinkedHashMap<>();
 
         for (String groupName : groupNames) {
             cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", BASE_PATH + groupName);
@@ -65,15 +66,35 @@ public class AutoMigrationApplication {
         // Search each interface implementation class
         // Not yet finished
         for (String groupName : groupNames) {
-            try {
-                InterfaceImplementationFinder interfaceImplementationFinder = new InterfaceImplementationFinder(BASE_PATH + groupName, "com.app.services.AddressService", PACKAGE_NAME);
-                interfaceImplementationFinder.printImplementations();
-            } catch (Exception e) {
-                e.printStackTrace();
+            Map<String, List<String>> controllerMap = controllerToServiceMap.get(groupName);
+            if (controllerMap == null) continue;
+
+            Set<String> uniqueServiceInterfaces = new HashSet<>();
+            for (List<String> serviceList : controllerMap.values()) {
+                uniqueServiceInterfaces.addAll(serviceList);
+            }
+
+            for (String serviceInterface : uniqueServiceInterfaces) {
+                try {
+                    InterfaceImplementationFinder finder = new InterfaceImplementationFinder(
+                            BASE_PATH + groupName,
+                            serviceInterface,
+                            PACKAGE_NAME
+                    );
+                    finder.printImplementations();
+
+                    Map<String, String> partialMap = finder.getInterfaceToImplementationMap();
+                    System.out.println("Interface to Implementation Map: " + partialMap);
+                    // put into interfaceToImplementationMap
+                    interfaceToImplementationMap.putAll(partialMap);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
-
+        System.out.println("interfaceToImplementationMap: " + interfaceToImplementationMap);
 
     }
 
