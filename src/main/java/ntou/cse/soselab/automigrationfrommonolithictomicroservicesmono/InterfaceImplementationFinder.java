@@ -8,7 +8,9 @@ import org.reflections.scanners.SubTypesScanner;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class InterfaceImplementationFinder {
@@ -17,11 +19,17 @@ public class InterfaceImplementationFinder {
     private final String basePackage;
     private ClassLoader classLoader;
 
+    private final Map<String, String> interfaceToImplementationMap = new HashMap<>();
+
     public InterfaceImplementationFinder(String projectPath, String interfaceClassName, String basePackage) throws Exception {
         this.projectPath = projectPath;
         this.interfaceClassName = interfaceClassName;
         this.basePackage = basePackage;
         this.classLoader = loadExternalClasses();
+    }
+
+    public Map<String, String> getInterfaceToImplementationMap() {
+        return interfaceToImplementationMap;
     }
 
     private ClassLoader loadExternalClasses() throws Exception {
@@ -78,7 +86,13 @@ public class InterfaceImplementationFinder {
     public void printImplementations() {
         try {
             Set<Class<?>> implementations = findImplementations();
-            implementations.forEach(impl -> System.out.println("Found: " + impl.getName()));
+            String targetInterfaceStr = interfaceClassName;
+
+            for (Class<?> impl : implementations) {
+                System.out.println("Found: " + impl.getName());
+                interfaceToImplementationMap.put(targetInterfaceStr, impl.getName());
+            }
+
             // 要再加上判斷條件，如果 implementations 為 @Service
         } catch (ClassNotFoundException e) {
             System.err.println("Error: Interface class not found - " + interfaceClassName);

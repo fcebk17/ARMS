@@ -9,7 +9,7 @@ public class AutoMigrationApplication {
         CloneProject cloneProject = new CloneProject();
         List<String> groupNames = cloneProject.getServiceName("A_E-Commerce", "User Role-Based");
         String BASE_PATH = "/home/popocorn/output/";
-        Map<String, Map<String, List<String>>> serviceMap = new LinkedHashMap<>();
+        Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
         String packageName = "ntou.cse.soselab";
         final String PACKAGE_NAME;
 
@@ -45,7 +45,7 @@ public class AutoMigrationApplication {
             Map<String, List<String>> newResults = controllerAutowiredFinder.getControllerAutowiredMap();
 
             // 如果 serviceMap 內還沒有這個 groupName，則新增
-            serviceMap.putIfAbsent(groupName, new LinkedHashMap<>());
+            controllerToServiceMap.putIfAbsent(groupName, new LinkedHashMap<>());
 
             // 將新結果合併到 serviceMap
             for (Map.Entry<String, List<String>> entry : newResults.entrySet()) {
@@ -53,13 +53,13 @@ public class AutoMigrationApplication {
                 List<String> interfaces = entry.getValue();
 
                 // 如果該 groupName 下的 Controller 已經存在，則合併 Interface 列表
-                serviceMap.get(groupName).merge(controllerName, interfaces, (existing, newList) -> {
+                controllerToServiceMap.get(groupName).merge(controllerName, interfaces, (existing, newList) -> {
                     existing.addAll(newList);
                     return existing;
                 });
             }
         }
-        System.out.println(serviceMap);
+        System.out.println("controllerToServiceMap: " + controllerToServiceMap);
         PACKAGE_NAME = removeLastPackageSegment(packageName);
 
         // Search each interface implementation class
@@ -76,6 +76,15 @@ public class AutoMigrationApplication {
 
 
     }
+
+
+
+
+
+
+
+
+
 
     // 刪除 package 名稱的最後一層 (e.g., com.app.controllers -> com.app)
     private static String removeLastPackageSegment(String packageName) {
