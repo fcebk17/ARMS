@@ -1,6 +1,7 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
 import java.io.IOException;
+import java.security.Provider;
 import java.util.*;
 
 public class AutoMigrationApplication {
@@ -10,10 +11,11 @@ public class AutoMigrationApplication {
         List<String> groupNames = cloneProject.getServiceName("A_E-Commerce", "User Role-Based");
 
         String BASE_PATH = "/home/popocorn/output/";
-        Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
         String packageName = "";
         final String PACKAGE_NAME;
+        Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
         Map<String, String> interfaceToImplementationMap = new LinkedHashMap<>();
+        Set<Map<String, List<String>>> serviceToRepositorySet = new LinkedHashSet<>();
 
         for (String groupName : groupNames) {
             cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", BASE_PATH + groupName);
@@ -95,6 +97,22 @@ public class AutoMigrationApplication {
         }
 
         System.out.println("interfaceToImplementationMap: " + interfaceToImplementationMap);
+
+        // 找到每個 ServiceImpl 中的 repository
+        for (String groupName : groupNames) {
+            for (String implementation : interfaceToImplementationMap.values()) {
+                ServiceAutowiredRepositoryFinder finder = new ServiceAutowiredRepositoryFinder(BASE_PATH + groupName, implementation);
+                finder.scan();
+
+                Map<String, List<String>> currentResult = finder.getAutowiredRepositories();
+
+                if(!serviceToRepositorySet.contains(currentResult)) {
+                    serviceToRepositorySet.add(new LinkedHashMap<>(currentResult));
+                }
+                // System.out.println("AutowiredRepositories: " + finder.getAutowiredRepositories());
+            }
+        }
+        System.out.println("serviceToRepositorySet: " + serviceToRepositorySet);
 
     }
 
