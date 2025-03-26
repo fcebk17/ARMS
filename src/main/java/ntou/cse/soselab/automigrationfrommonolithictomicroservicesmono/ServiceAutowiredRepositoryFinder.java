@@ -53,7 +53,7 @@ public class ServiceAutowiredRepositoryFinder {
                 String fullType = importMap.getOrDefault(fieldType, fieldType);
                 String repoFile = classToFilePath.get(fullType);
 
-                if (repoFile != null && isRepositoryClass(repoFile)) {
+                if (repoFile != null && isUsedRepositoryClass(repoFile)) {
                     repoInfo.add(fullType);
                 }
             }
@@ -105,12 +105,60 @@ public class ServiceAutowiredRepositoryFinder {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        ServiceAutowiredRepositoryFinder scanner = new ServiceAutowiredRepositoryFinder(
-                "/home/popocorn/output/AdminService",
-                "com.app.services.AddressServiceImpl"
-        );
-        scanner.scan();
-        System.out.println(scanner.getAutowiredRepositories());
+    private boolean isUsedRepositoryClass(String filePath) {
+        if (repositoryCache.containsKey(filePath)) {
+            return repositoryCache.get(filePath);
+        }
+
+        try (FileInputStream in = new FileInputStream(filePath)) {
+            CompilationUnit cu = StaticJavaParser.parse(in);
+
+            // 1. 檢查是否有 @Repository 註解
+            boolean hasRepoAnnotation = cu.getTypes().stream()
+                    .flatMap(t -> t.getAnnotations().stream())
+                    .anyMatch(ann -> ann.getNameAsString().equals("Repository"));
+
+            if (!hasRepoAnnotation) {
+                repositoryCache.put(filePath, false);
+                return false;
+            }
+
+            // 2. 找出 class 名稱 → 再根據它找出變數名稱
+            String className = cu.getTypes().get(0).getNameAsString();
+
+            // 3. 找出 service 檔案
+            String serviceFilePath = classToFilePath.get(serviceFullName);
+            if (serviceFilePath == null) {
+                repositoryCache.put(filePath, false);
+                return false;
+            }
+
+            // 4. 找到所有 @Autowired 且類型為 className 的變數名稱
+            try (FileInputStream serviceIn = new FileInputStream(serviceFilePath)) {
+                CompilationUnit serviceCu = StaticJavaParser.parse(serviceIn);
+
+                List<String> matchingFields = serviceCu.findAll(FieldDeclaration.class).stream()
+                        .filter(f -> f.isAnnotationPresent("Autowired"))
+                        .filter(f -> f.getElementType().asString().equals(className))
+                        .flatMap(f -> f.getVariables().stream())
+                        .map(v -> v.getNameAsString())
+                        .toList();
+
+                // 5. 檢查這些變數名稱是否出現在程式中
+                Set<String> usedNames = new HashSet<>();
+                serviceCu.findAll(com.github.javaparser.ast.expr.NameExpr.class).forEach(expr -> {
+                    usedNames.add(expr.getNameAsString());
+                });
+
+                boolean isUsed = matchingFields.stream().anyMatch(usedNames::contains);
+
+                repositoryCache.put(filePath, isUsed);
+                return isUsed;
+            }
+
+        } catch (Exception e) {
+            repositoryCache.put(filePath, false);
+            return false;
+        }
     }
 }
