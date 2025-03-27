@@ -139,15 +139,14 @@ public class AutoMigrationApplication {
 
         System.out.println("microserviceToRepositoryMap: " + microserviceToRepositoryMap);
 
+        boolean isThereDuplicateRepositories = checkForDuplicateRepositories(microserviceToRepositoryMap);
+//        System.out.println("isThereDuplicateRepositories: " + isThereDuplicateRepositories);
+
+        if (!isThereDuplicateRepositories) {
+            NoDuplicateRepositoryCleaner cleaner = new NoDuplicateRepositoryCleaner(microserviceToRepositoryMap, BASE_PATH);
+            cleaner.cleanUnusedRepositories();
+        }
     }
-
-
-
-
-
-
-
-
 
 
     // 刪除 package 名稱的最後一層 (e.g., com.app.controllers -> com.app)
@@ -157,6 +156,21 @@ public class AutoMigrationApplication {
             return packageName.substring(0, lastDotIndex); // 移除最後一層
         }
         return packageName; // 如果沒有 `.`，則回傳原本的 package
+    }
+
+    // 判斷是否有重複的 repository
+    public static boolean checkForDuplicateRepositories(Map<String, Set<String>> serviceRepoMap) {
+        Set<String> allRepositories = new HashSet<>();
+
+        for (Set<String> repoSet : serviceRepoMap.values()) {
+            for (String repo : repoSet) {
+                if (!allRepositories.add(repo)) {
+                    return true; // 重複出現
+                }
+            }
+        }
+
+        return false; // 沒有重複
     }
 
 }
