@@ -24,7 +24,7 @@ public class NoDuplicateRepositoryCleaner {
 
             Path rootPath = Paths.get(baseDir);
             if (!Files.exists(rootPath)) {
-                System.out.println("⚠️ Path not found: " + baseDir);
+                System.out.println("Path not found: " + baseDir);
                 continue;
             }
 
@@ -39,10 +39,10 @@ public class NoDuplicateRepositoryCleaner {
                             String classFQN = getFullyQualifiedClassName(path.toFile(), baseDir);
                             if (!repositoriesToKeep.contains(classFQN)) {
                                 Files.delete(path);
-                                System.out.println("🗑 Deleted unused repository: " + classFQN);
+                                System.out.println("Deleted unused repository: " + classFQN);
                             }
                         } catch (IOException e) {
-                            System.err.println("❌ Error processing " + path + ": " + e.getMessage());
+                            System.err.println("Error processing " + path + ": " + e.getMessage());
                         }
                     });
         }
