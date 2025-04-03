@@ -16,79 +16,123 @@ import java.util.stream.Stream;
 
 public class RepositoryUsageFinder {
 
-    // 🔧 Base 路徑（不要寫死）
-    static String basePath = "/home/popocorn/output/AdminService";
+    // ✅ 設定 basePath 為根目錄
+    static String basePath = "/home/popocorn/output/";
 
-    // ✅ Service-to-Repo 的對應關係
-    static Map<String, List<String>> serviceToRepos = Map.of(
-            "com.app.services.UserServiceImpl", List.of(
-                    "com.app.repositories.UserRepo",
-                    "com.app.repositories.RoleRepo",
-                    "com.app.repositories.AddressRepo"
+    // ✅ 你的輸入資料結構
+    static Map<String, Map<String, List<String>>> microserviceToServiceImplToRepositoryMap = Map.of(
+            "AdminService", Map.of(
+                    "com.app.services.UserServiceImpl", List.of(
+                            "com.app.repositories.UserRepo",
+                            "com.app.repositories.RoleRepo",
+                            "com.app.repositories.AddressRepo"
+                    ),
+                    "com.app.services.AddressServiceImpl", List.of(
+                            "com.app.repositories.AddressRepo",
+                            "com.app.repositories.UserRepo"
+                    )
+            ),
+            "CustomerService", Map.of(
+                    "com.app.services.CartServiceImpl", List.of(
+                            "com.app.repositories.CartRepo",
+                            "com.app.repositories.ProductRepo",
+                            "com.app.repositories.CartItemRepo"
+                    ),
+                    "com.app.services.CategoryServiceImpl", List.of("com.app.repositories.CategoryRepo"),
+                    "com.app.services.OrderServiceImpl", List.of(
+                            "com.app.repositories.CartRepo",
+                            "com.app.repositories.OrderRepo",
+                            "com.app.repositories.PaymentRepo",
+                            "com.app.repositories.OrderItemRepo"
+                    ),
+                    "com.app.services.ProductServiceImpl", List.of(
+                            "com.app.repositories.ProductRepo",
+                            "com.app.repositories.CategoryRepo",
+                            "com.app.repositories.CartRepo"
+                    )
             )
     );
 
     public static void main(String[] args) throws IOException {
-        Map<String, Map<String, List<String>>> result = new HashMap<>();
+        Map<String, Map<String, Map<String, List<String>>>> analysisResult = new LinkedHashMap<>();
 
-        for (var entry : serviceToRepos.entrySet()) {
-            String serviceClassName = entry.getKey();
-            List<String> repoClassNames = entry.getValue();
+        for (var microserviceEntry : microserviceToServiceImplToRepositoryMap.entrySet()) {
+            String microserviceName = microserviceEntry.getKey();
+            String microservicePath = basePath + microserviceName;
+            Map<String, List<String>> serviceToRepoMap = microserviceEntry.getValue();
 
-            String relativePath = serviceClassName.replace(".", "/") + ".java";
+            Map<String, Map<String, List<String>>> serviceImplResult = new LinkedHashMap<>();
 
-            // ✅ 使用遞迴方式尋找檔案
-            File javaFile = findFileRecursively(basePath, relativePath);
-            if (javaFile == null) {
-                System.out.println("Not found: " + relativePath);
-                continue;
-            }
+            for (var serviceEntry : serviceToRepoMap.entrySet()) {
+                String serviceClass = serviceEntry.getKey();
+                List<String> repos = serviceEntry.getValue();
 
-            CompilationUnit cu = StaticJavaParser.parse(javaFile);
-            Optional<ClassOrInterfaceDeclaration> clazz = cu.getClassByName(getSimpleName(serviceClassName));
-            if (clazz.isEmpty()) continue;
+                String relativePath = serviceClass.replace(".", "/") + ".java";
+                File serviceFile = findFileRecursively(microservicePath, relativePath);
 
-            Map<String, List<String>> repoUsages = new HashMap<>();
-            for (String repoClass : repoClassNames) {
-                String repoSimpleName = getSimpleName(repoClass);
-                repoUsages.put(repoClass, new ArrayList<>());
+                if (serviceFile == null) {
+                    System.out.println("Not found: " + relativePath + " under " + microserviceName);
+                    continue;
+                }
 
-                // 掃欄位宣告
-                clazz.get().findAll(FieldDeclaration.class).forEach(field -> {
-                    if (field.getVariables().stream().anyMatch(v -> v.getType().asString().equals(repoSimpleName))) {
-                        repoUsages.get(repoClass).add("Field: " + field);
-                    }
-                });
+                CompilationUnit cu = StaticJavaParser.parse(serviceFile);
+                Optional<ClassOrInterfaceDeclaration> clazzOpt = cu.getClassByName(getSimpleName(serviceClass));
+                if (clazzOpt.isEmpty()) continue;
 
-                // 掃方法中調用
-                clazz.get().findAll(MethodDeclaration.class).forEach(method -> {
-                    method.findAll(MethodCallExpr.class).forEach(call -> {
-                        call.getScope().ifPresent(scope -> {
-                            if (scope instanceof NameExpr nameExpr &&
-                                    nameExpr.getNameAsString().toLowerCase().contains(repoSimpleName.toLowerCase())) {
-                                repoUsages.get(repoClass).add("Method: " + method.getName() + " -> " + call.toString());
-                            }
+                ClassOrInterfaceDeclaration clazz = clazzOpt.get();
+                Map<String, List<String>> repoUsageMap = new LinkedHashMap<>();
+
+                for (String repoFQCN : repos) {
+                    String repoSimple = getSimpleName(repoFQCN);
+                    List<String> usages = new ArrayList<>();
+
+                    // 欄位使用
+                    clazz.findAll(FieldDeclaration.class).forEach(field -> {
+                        if (field.getVariables().stream().anyMatch(v -> v.getType().asString().equals(repoSimple))) {
+                            usages.add("Field: " + field);
+                        }
+                    });
+
+                    // 方法調用
+                    clazz.findAll(MethodDeclaration.class).forEach(method -> {
+                        method.findAll(MethodCallExpr.class).forEach(call -> {
+                            call.getScope().ifPresent(scope -> {
+                                if (scope instanceof NameExpr nameExpr &&
+                                        nameExpr.getNameAsString().toLowerCase().contains(repoSimple.toLowerCase())) {
+                                    usages.add("Method: " + method.getName() + " -> " + call);
+                                }
+                            });
                         });
                     });
-                });
+
+                    repoUsageMap.put(repoFQCN, usages);
+                }
+
+                serviceImplResult.put(serviceClass, repoUsageMap);
             }
 
-            result.put(serviceClassName, repoUsages);
+            analysisResult.put(microserviceName, serviceImplResult);
         }
 
-        // 印出分析結果
-        for (var service : result.entrySet()) {
-            System.out.println("Service: " + service.getKey());
-            for (var repo : service.getValue().entrySet()) {
-                System.out.println("  Repo: " + repo.getKey());
-                for (String usage : repo.getValue()) {
-                    System.out.println("    " + usage);
+        // ✅ 印出結果
+        for (var microservice : analysisResult.entrySet()) {
+            System.out.println("Microservice: " + microservice.getKey());
+            for (var service : microservice.getValue().entrySet()) {
+                System.out.println("  ServiceImpl: " + service.getKey());
+                for (var repo : service.getValue().entrySet()) {
+                    System.out.println("    Repository: " + repo.getKey());
+                    if (repo.getValue().isEmpty()) {
+                        System.out.println("      (No usage found)");
+                    }
+                    for (String usage : repo.getValue()) {
+                        System.out.println("      " + usage);
+                    }
                 }
             }
         }
     }
 
-    // 📂 遞迴從 base 路徑中尋找相對路徑對應的 Java 檔
+    // 🔍 遞迴尋找相對路徑檔案
     private static File findFileRecursively(String baseDir, String relativePath) throws IOException {
         Path start = Paths.get(baseDir);
         final String targetPath = relativePath.replace(File.separatorChar, '/');
@@ -101,8 +145,8 @@ public class RepositoryUsageFinder {
         }
     }
 
-    // 工具方法：從 FQCN 取得簡單類名
     private static String getSimpleName(String fqcn) {
         return fqcn.substring(fqcn.lastIndexOf('.') + 1);
     }
 }
+

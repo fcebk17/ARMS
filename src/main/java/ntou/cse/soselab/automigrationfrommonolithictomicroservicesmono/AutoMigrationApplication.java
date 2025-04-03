@@ -20,6 +20,8 @@ public class AutoMigrationApplication {
 
         Map<String, Set<String>> microserviceToRepositoryMap = new HashMap<>();
 
+        Map<String, Map<String, List<String>>> microserviceToServiceImplToRepositoryMap = new LinkedHashMap<>();
+
         for (String groupName : groupNames) {
             cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", BASE_PATH + groupName);
 
@@ -138,6 +140,36 @@ public class AutoMigrationApplication {
         }
 
         System.out.println("microserviceToRepositoryMap: " + microserviceToRepositoryMap);
+
+        // 生成 module -> ServiceImpl -> repository 資料結構
+        for (Map.Entry<String, Map<String, List<String>>> moduleEntry : controllerToServiceMap.entrySet()) {
+            String moduleName = moduleEntry.getKey(); // e.g., AdminService
+            Map<String, List<String>> controllerMap = moduleEntry.getValue();
+
+            // 每個模組底下的 ServiceImpl 對應 Repository 列表
+            Map<String, List<String>> serviceImplToRepoMap = new LinkedHashMap<>();
+
+            for (List<String> serviceInterfaces : controllerMap.values()) {
+                for (String serviceInterface : serviceInterfaces) {
+                    // 取得實作類別
+                    String implClass = interfaceToImplementationMap.get(serviceInterface);
+                    if (implClass == null) continue;
+
+                    // 找出對應的 Repository 列表
+                    for (Map<String, List<String>> serviceRepoMap : serviceToRepositorySet) {
+                        if (serviceRepoMap.containsKey(implClass)) {
+                            serviceImplToRepoMap.put(implClass, serviceRepoMap.get(implClass));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            microserviceToServiceImplToRepositoryMap.put(moduleName, serviceImplToRepoMap);
+        }
+
+        System.out.println("microserviceToServiceImplToRepositoryMap: " + microserviceToServiceImplToRepositoryMap);
+
 
         boolean isThereDuplicateRepositories = checkForDuplicateRepositories(microserviceToRepositoryMap);
 //        System.out.println("isThereDuplicateRepositories: " + isThereDuplicateRepositories);
