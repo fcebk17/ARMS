@@ -19,9 +19,15 @@ public class RepositoryUsageFinder {
     private final String basePath;
     private final Map<String, Map<String, List<String>>> microserviceMap;
 
+    private final Map<String, Map<String, Set<String>>> microserviceToRepositoryMethodMap = new LinkedHashMap<>();
+
     public RepositoryUsageFinder(String basePath, Map<String, Map<String, List<String>>> microserviceMap) {
         this.basePath = basePath;
         this.microserviceMap = microserviceMap;
+    }
+
+    public Map<String, Map<String, Set<String>>> getMicroserviceToRepositoryMethodMap() {
+        return microserviceToRepositoryMethodMap;
     }
 
     public void analyze() throws IOException {
@@ -33,6 +39,7 @@ public class RepositoryUsageFinder {
             Map<String, List<String>> serviceToRepoMap = microserviceEntry.getValue();
 
             Map<String, Map<String, List<String>>> serviceImplResult = new LinkedHashMap<>();
+            Map<String, Set<String>> repoToMethods = new LinkedHashMap<>();
 
             for (var serviceEntry : serviceToRepoMap.entrySet()) {
                 String serviceClass = serviceEntry.getKey();
@@ -56,6 +63,7 @@ public class RepositoryUsageFinder {
                 for (String repoFQCN : repos) {
                     String repoSimple = getSimpleName(repoFQCN);
                     List<String> usages = new ArrayList<>();
+                    Set<String> calledMethods = repoToMethods.computeIfAbsent(repoFQCN, k -> new LinkedHashSet<>());
 
                     clazz.findAll(FieldDeclaration.class).forEach(field -> {
                         if (field.getVariables().stream().anyMatch(v -> v.getType().asString().equals(repoSimple))) {
@@ -69,6 +77,7 @@ public class RepositoryUsageFinder {
                                 if (scope instanceof NameExpr nameExpr &&
                                         nameExpr.getNameAsString().toLowerCase().contains(repoSimple.toLowerCase())) {
                                     usages.add("Method: " + method.getName() + " -> " + call);
+                                    calledMethods.add(call.getNameAsString()); // ✅ 加入 method 名稱
                                 }
                             });
                         });
@@ -81,9 +90,10 @@ public class RepositoryUsageFinder {
             }
 
             analysisResult.put(microserviceName, serviceImplResult);
+            microserviceToRepositoryMethodMap.put(microserviceName, repoToMethods); // ✅ 填入結果 map
         }
 
-        // Console output
+        // 原有 console 輸出保留
         for (var microservice : analysisResult.entrySet()) {
             System.out.println("Microservice: " + microservice.getKey());
             for (var service : microservice.getValue().entrySet()) {
@@ -100,6 +110,7 @@ public class RepositoryUsageFinder {
             }
         }
     }
+
 
     private static File findFileRecursively(String baseDir, String relativePath) throws IOException {
         Path start = Paths.get(baseDir);
@@ -156,6 +167,7 @@ public class RepositoryUsageFinder {
 
         RepositoryUsageFinder analyzer = new RepositoryUsageFinder(base, input);
         analyzer.analyze();
+        System.out.println(analyzer.getMicroserviceToRepositoryMethodMap());
     }
 }
 
