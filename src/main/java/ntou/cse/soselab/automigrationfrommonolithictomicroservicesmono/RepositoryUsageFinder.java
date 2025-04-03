@@ -3,8 +3,8 @@ package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 
@@ -16,49 +16,20 @@ import java.util.stream.Stream;
 
 public class RepositoryUsageFinder {
 
-    // ✅ 設定 basePath 為根目錄
-    static String basePath = "/home/popocorn/output/";
+    private final String basePath;
+    private final Map<String, Map<String, List<String>>> microserviceMap;
 
-    // ✅ 你的輸入資料結構
-    static Map<String, Map<String, List<String>>> microserviceToServiceImplToRepositoryMap = Map.of(
-            "AdminService", Map.of(
-                    "com.app.services.UserServiceImpl", List.of(
-                            "com.app.repositories.UserRepo",
-                            "com.app.repositories.RoleRepo",
-                            "com.app.repositories.AddressRepo"
-                    ),
-                    "com.app.services.AddressServiceImpl", List.of(
-                            "com.app.repositories.AddressRepo",
-                            "com.app.repositories.UserRepo"
-                    )
-            ),
-            "CustomerService", Map.of(
-                    "com.app.services.CartServiceImpl", List.of(
-                            "com.app.repositories.CartRepo",
-                            "com.app.repositories.ProductRepo",
-                            "com.app.repositories.CartItemRepo"
-                    ),
-                    "com.app.services.CategoryServiceImpl", List.of("com.app.repositories.CategoryRepo"),
-                    "com.app.services.OrderServiceImpl", List.of(
-                            "com.app.repositories.CartRepo",
-                            "com.app.repositories.OrderRepo",
-                            "com.app.repositories.PaymentRepo",
-                            "com.app.repositories.OrderItemRepo"
-                    ),
-                    "com.app.services.ProductServiceImpl", List.of(
-                            "com.app.repositories.ProductRepo",
-                            "com.app.repositories.CategoryRepo",
-                            "com.app.repositories.CartRepo"
-                    )
-            )
-    );
+    public RepositoryUsageFinder(String basePath, Map<String, Map<String, List<String>>> microserviceMap) {
+        this.basePath = basePath;
+        this.microserviceMap = microserviceMap;
+    }
 
-    public static void main(String[] args) throws IOException {
+    public void analyze() throws IOException {
         Map<String, Map<String, Map<String, List<String>>>> analysisResult = new LinkedHashMap<>();
 
-        for (var microserviceEntry : microserviceToServiceImplToRepositoryMap.entrySet()) {
+        for (var microserviceEntry : microserviceMap.entrySet()) {
             String microserviceName = microserviceEntry.getKey();
-            String microservicePath = basePath + microserviceName;
+            String microservicePath = basePath + "/" + microserviceName;
             Map<String, List<String>> serviceToRepoMap = microserviceEntry.getValue();
 
             Map<String, Map<String, List<String>>> serviceImplResult = new LinkedHashMap<>();
@@ -86,14 +57,12 @@ public class RepositoryUsageFinder {
                     String repoSimple = getSimpleName(repoFQCN);
                     List<String> usages = new ArrayList<>();
 
-                    // 欄位使用
                     clazz.findAll(FieldDeclaration.class).forEach(field -> {
                         if (field.getVariables().stream().anyMatch(v -> v.getType().asString().equals(repoSimple))) {
                             usages.add("Field: " + field);
                         }
                     });
 
-                    // 方法調用
                     clazz.findAll(MethodDeclaration.class).forEach(method -> {
                         method.findAll(MethodCallExpr.class).forEach(call -> {
                             call.getScope().ifPresent(scope -> {
@@ -114,7 +83,7 @@ public class RepositoryUsageFinder {
             analysisResult.put(microserviceName, serviceImplResult);
         }
 
-        // ✅ 印出結果
+        // Console output
         for (var microservice : analysisResult.entrySet()) {
             System.out.println("Microservice: " + microservice.getKey());
             for (var service : microservice.getValue().entrySet()) {
@@ -132,7 +101,6 @@ public class RepositoryUsageFinder {
         }
     }
 
-    // 🔍 遞迴尋找相對路徑檔案
     private static File findFileRecursively(String baseDir, String relativePath) throws IOException {
         Path start = Paths.get(baseDir);
         final String targetPath = relativePath.replace(File.separatorChar, '/');
@@ -148,5 +116,47 @@ public class RepositoryUsageFinder {
     private static String getSimpleName(String fqcn) {
         return fqcn.substring(fqcn.lastIndexOf('.') + 1);
     }
+
+    // 👉 Demo 用 main()：你可以在單元測試或其他地方自行建立實例使用
+    public static void main(String[] args) throws IOException {
+        String base = "/home/popocorn/output";
+
+        Map<String, Map<String, List<String>>> input = Map.of(
+                "AdminService", Map.of(
+                        "com.app.services.UserServiceImpl", List.of(
+                                "com.app.repositories.UserRepo",
+                                "com.app.repositories.RoleRepo",
+                                "com.app.repositories.AddressRepo"
+                        ),
+                        "com.app.services.AddressServiceImpl", List.of(
+                                "com.app.repositories.AddressRepo",
+                                "com.app.repositories.UserRepo"
+                        )
+                ),
+                "CustomerService", Map.of(
+                        "com.app.services.CartServiceImpl", List.of(
+                                "com.app.repositories.CartRepo",
+                                "com.app.repositories.ProductRepo",
+                                "com.app.repositories.CartItemRepo"
+                        ),
+                        "com.app.services.CategoryServiceImpl", List.of("com.app.repositories.CategoryRepo"),
+                        "com.app.services.OrderServiceImpl", List.of(
+                                "com.app.repositories.CartRepo",
+                                "com.app.repositories.OrderRepo",
+                                "com.app.repositories.PaymentRepo",
+                                "com.app.repositories.OrderItemRepo"
+                        ),
+                        "com.app.services.ProductServiceImpl", List.of(
+                                "com.app.repositories.ProductRepo",
+                                "com.app.repositories.CategoryRepo",
+                                "com.app.repositories.CartRepo"
+                        )
+                )
+        );
+
+        RepositoryUsageFinder analyzer = new RepositoryUsageFinder(base, input);
+        analyzer.analyze();
+    }
 }
+
 
