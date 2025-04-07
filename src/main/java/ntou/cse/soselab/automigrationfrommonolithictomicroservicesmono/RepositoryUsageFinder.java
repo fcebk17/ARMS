@@ -27,57 +27,6 @@ public class RepositoryUsageFinder {
         this.serviceRepos = serviceRepos;
     }
 
-    public static void main(String[] args) throws IOException {
-        // 設定基礎目錄
-        String baseDir = "/home/popocorn/output";
-
-        // 初始化服務結構
-        Map<String, Set<String>> initializedServiceRepos = initializeServiceRepos();
-
-        // 建立掃描器實例
-        RepositoryUsageFinder scanner = new RepositoryUsageFinder(baseDir, initializedServiceRepos);
-
-        // 執行掃描
-        scanner.scan();
-
-        // 輸出結果
-        printRepositoryMethodUsage();
-    }
-
-    /**
-     * 初始化服務和對應的 Repository 集合
-     * @return 初始化好的服務 Repository 映射
-     */
-    private static Map<String, Set<String>> initializeServiceRepos() {
-        Map<String, Set<String>> serviceRepos = new HashMap<>();
-
-        // CustomerService
-        Set<String> customerRepos = new HashSet<>(Arrays.asList(
-                "com.app.repositories.CartItemRepo",
-                "com.app.repositories.CategoryRepo",
-                "com.app.repositories.OrderRepo",
-                "com.app.repositories.ProductRepo",
-                "com.app.repositories.PaymentRepo",
-                "com.app.repositories.CartRepo",
-                "com.app.repositories.OrderItemRepo"
-        ));
-        serviceRepos.put("CustomerService", customerRepos);
-
-        // AdminService
-        Set<String> adminRepos = new HashSet<>(Arrays.asList(
-                "com.app.repositories.UserRepo",
-                "com.app.repositories.AddressRepo",
-                "com.app.repositories.RoleRepo"
-        ));
-        serviceRepos.put("AdminService", adminRepos);
-
-        return serviceRepos;
-    }
-
-    /**
-     * 執行掃描流程
-     * @throws IOException 當讀取文件發生 I/O 錯誤時
-     */
     public void scan() throws IOException {
         // 掃描每個服務中的 repository 使用情況
         for (String serviceName : serviceRepos.keySet()) {
@@ -106,7 +55,7 @@ public class RepositoryUsageFinder {
         }
 
         collectJavaFiles(serviceRoot, javaFiles);
-        System.out.println("在 " + serviceDir + " 找到 " + javaFiles.size() + " 個 Java 檔案");
+        // System.out.println("在 " + serviceDir + " 找到 " + javaFiles.size() + " 個 Java 檔案");
 
         // 掃描每個 Java 檔案
         for (File file : javaFiles) {
@@ -146,7 +95,7 @@ public class RepositoryUsageFinder {
                 return;
             }
 
-            System.out.println("在檔案 " + file.getName() + " 中找到 " + targetClass + " 的使用");
+            // System.out.println("在檔案 " + file.getName() + " 中找到 " + targetClass + " 的使用");
 
             // === 收集所有變數對應型別（欄位 + 方法內部 + 方法參數） ===
             Map<String, String> nameToType = new HashMap<>();
@@ -235,9 +184,12 @@ public class RepositoryUsageFinder {
     private static boolean isCollectionType(String typeName) {
         return typeName.equals("List") || typeName.equals("ArrayList") ||
                 typeName.equals("Set") || typeName.equals("HashSet") ||
-                typeName.equals("Collection") || typeName.equals("Map") ||
-                typeName.contains("Collection") || typeName.contains("List") ||
-                typeName.contains("Set") || typeName.contains("Map");
+                typeName.equals("Collection") || typeName.equals("HashMap") ||
+                typeName.contains("Collection") || typeName.contains("LinkedList") ||
+                typeName.contains("TreeSet") || typeName.contains("Map") ||
+                typeName.contains("TreeMap") || typeName.contains("LinkedHashMap") ||
+                typeName.contains("Queue") || typeName.contains("Deque") ||
+                typeName.contains("PriorityQueue");
     }
 
     // 處理 forEach 迴圈中的變數類型
@@ -354,7 +306,7 @@ public class RepositoryUsageFinder {
     }
 
     // 輸出 Repository 使用的方法
-    private static void printRepositoryMethodUsage() {
+    public static void printRepositoryMethodUsage() {
         System.out.println("=== Repository 方法使用情況 ===");
         for (String repo : repositoryMethodUsage.keySet()) {
             Set<String> methods = repositoryMethodUsage.get(repo);

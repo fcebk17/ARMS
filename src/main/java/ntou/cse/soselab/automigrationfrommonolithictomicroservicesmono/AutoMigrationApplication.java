@@ -178,6 +178,10 @@ public class AutoMigrationApplication {
             NoDuplicateRepositoryCleaner cleaner = new NoDuplicateRepositoryCleaner(microserviceToRepositoryMap, BASE_PATH);
             cleaner.cleanUnusedRepositories();
         }
+
+        RepositoryUsageFinder finder = new RepositoryUsageFinder(BASE_PATH, microserviceToRepositoryMap);
+        finder.scan();
+        finder.printRepositoryMethodUsage();
     }
 
 
