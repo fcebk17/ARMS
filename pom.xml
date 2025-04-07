@@ -76,13 +76,13 @@
         <dependency>
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-core</artifactId>
-            <version>LATEST</version>
+            <version>3.25.3</version>
         </dependency>
 
         <dependency>
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-symbol-solver-core</artifactId>
-            <version>LATEST</version>
+            <version>3.25.3</version>
         </dependency>
 
         <!-- OpenRewrite -->
@@ -151,6 +151,15 @@
 <!--                        <version>0.0.1-SNAPSHOT</version>-->
 <!--                    </dependency>-->
 <!--                </dependencies>-->
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+<!--                    <compilerArgs>&#45;&#45;enable-preview</compilerArgs>-->
+                </configuration>
             </plugin>
         </plugins>
         <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
