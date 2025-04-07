@@ -72,16 +72,48 @@ public class RepositoryUsageFinder {
                     });
 
                     clazz.findAll(MethodDeclaration.class).forEach(method -> {
+                        // 1. 建立變數名稱到型別的映射表
+                        Map<String, String> varTypeMap = new HashMap<>();
+
+                        // method parameters
+                        method.getParameters().forEach(p -> varTypeMap.put(p.getNameAsString(), p.getTypeAsString()));
+
+                        // method local variables
+                        method.findAll(com.github.javaparser.ast.body.VariableDeclarator.class).forEach(v -> {
+                            varTypeMap.put(v.getNameAsString(), v.getType().asString());
+                        });
+
+                        // class fields
+                        clazz.findAll(FieldDeclaration.class).forEach(field -> {
+                            field.getVariables().forEach(v -> {
+                                varTypeMap.put(v.getNameAsString(), field.getElementType().asString());
+                            });
+                        });
+
+                        // 2. 掃 method call 並輸出
                         method.findAll(MethodCallExpr.class).forEach(call -> {
                             call.getScope().ifPresent(scope -> {
                                 if (scope instanceof NameExpr nameExpr &&
                                         nameExpr.getNameAsString().toLowerCase().contains(repoSimple.toLowerCase())) {
-                                    usages.add("Method: " + method.getName() + " -> " + call);
-                                    calledMethods.add(call.getNameAsString()); // ✅ 加入 method 名稱
+
+                                    // 推論參數型別
+                                    List<String> paramWithTypes = new ArrayList<>();
+                                    for (int i = 0; i < call.getArguments().size(); i++) {
+                                        String argName = call.getArgument(i).toString();
+                                        String type = varTypeMap.getOrDefault(argName, "UnknownType");
+                                        paramWithTypes.add(type + " " + argName);
+                                    }
+
+                                    String methodCallWithArgs = call.getNameAsString() + "(" + String.join(", ", paramWithTypes) + ")";
+                                    String usageLine = "Method: " + method.getName() + " -> " + nameExpr.getNameAsString() + "." + methodCallWithArgs;
+
+                                    usages.add(usageLine);
+                                    calledMethods.add(methodCallWithArgs);
                                 }
                             });
                         });
                     });
+
 
                     repoUsageMap.put(repoFQCN, usages);
                 }
