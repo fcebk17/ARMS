@@ -1,13 +1,11 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
-import javax.xml.crypto.Data;
 import java.util.*;
 
-public class AutoMigrationApplication {
+public class DatabaseSegmentationApplication {
     public static void main(String[] args) throws Exception {
-
-        DatabaseAccessing databaseAccessing = new DatabaseAccessing();
-        List<String> groupNames = databaseAccessing.getServiceName("A_E-Commerce", "User Role-Based");
+        FileProcessingApplication application = new FileProcessingApplication();
+        List<String> groupNames = application.getServiceName();
 
         String BASE_PATH = "/home/popocorn/output/";
         String packageName = "";
@@ -22,27 +20,6 @@ public class AutoMigrationApplication {
         Map<String, Map<String, List<String>>> microserviceToServiceImplToRepositoryMap = new LinkedHashMap<>();
         Map<String, Map<String, Map<String, String>>> repositoryMethodParametersMap = new HashMap<>();
 
-        for (String groupName : groupNames) {
-            CloneProject cloneProject = new CloneProject();
-            cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", BASE_PATH + groupName);
-
-            // modify pom.xml by JDOM
-            try {
-                ModifyMavenSetting modifyMavenSetting = new ModifyMavenSetting(BASE_PATH + groupName +"/ECommerceApplication/pom.xml");
-                modifyMavenSetting.loadPomFile();
-                modifyMavenSetting.modifyArtifactId(groupName);
-                modifyMavenSetting.modifyName(groupName);
-                modifyMavenSetting.savePomFile();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Use JavaParser to delete endpoint of controller
-        DeleteEndpointByJavaParser deleteEndpointByJavaParser = new DeleteEndpointByJavaParser();
-        List<Map<String, Object>> endpointGroupNames = deleteEndpointByJavaParser.getEndpointGroupMapping("A_E-Commerce", "User Role-Based");
-        Map<String, List<String>> groupEndpointsByKey = deleteEndpointByJavaParser.classifyEndpoints(endpointGroupNames, groupNames);
-        deleteEndpointByJavaParser.RestfulMethodRemoval(groupEndpointsByKey);
 
         // Search `@Autowired interfaces in each Controller
         for (String groupName : groupNames) {
@@ -211,5 +188,4 @@ public class AutoMigrationApplication {
 
         return false; // 沒有重複
     }
-
 }
