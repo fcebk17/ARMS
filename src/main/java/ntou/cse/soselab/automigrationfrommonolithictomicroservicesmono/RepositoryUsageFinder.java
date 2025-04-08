@@ -22,9 +22,15 @@ public class RepositoryUsageFinder {
     private final Map<String, Set<String>> serviceRepos;
     private static final Map<String, Set<String>> repositoryMethodUsage = new HashMap<>();
 
+    private static final Map<String, Map<String, Map<String, String>>> repositoryMethodParameters = new HashMap<>();
+
     public RepositoryUsageFinder(String baseDir, Map<String, Set<String>> serviceRepos) {
         this.baseDir = baseDir;
         this.serviceRepos = serviceRepos;
+    }
+
+    public Map<String, Map<String, Map<String, String>>> getRepositoryMethodParameters() {
+        return repositoryMethodParameters;
     }
 
     public void scan() throws IOException {
@@ -148,6 +154,13 @@ public class RepositoryUsageFinder {
                                     String argName = ((NameExpr) arg).getNameAsString();
                                     String type = resolveVariableType(argName, nameToType, genericCollectionTypes);
                                     argsWithTypes.add(type + " " + argName);
+
+                                    // 新增到 repositoryMethodParameters
+                                    repositoryMethodParameters
+                                            .computeIfAbsent(targetClass, k -> new HashMap<>())
+                                            .computeIfAbsent(methodName, k -> new HashMap<>())
+                                            .put(type, argName);
+
                                 } else {
                                     argsWithTypes.add(arg.toString());
                                 }
@@ -163,6 +176,22 @@ public class RepositoryUsageFinder {
 
         } catch (Exception e) {
             System.err.println("解析檔案失敗 " + file.getPath() + ": " + e.getMessage());
+        }
+    }
+
+    // 新增一個方法印出 repositoryMethodParameters
+    public static void printRepositoryMethodParameters() {
+        System.out.println("=== Repository 方法參數 ===");
+        for (String repo : repositoryMethodParameters.keySet()) {
+            System.out.println("\n" + repo + ":");
+            Map<String, Map<String, String>> methods = repositoryMethodParameters.get(repo);
+            for (String methodName : methods.keySet()) {
+                System.out.println("  方法: " + methodName);
+                Map<String, String> parameters = methods.get(methodName);
+                for (String paramType : parameters.keySet()) {
+                    System.out.println("    參數型態: " + paramType + ", 參數名稱: " + parameters.get(paramType));
+                }
+            }
         }
     }
 

@@ -21,6 +21,7 @@ public class AutoMigrationApplication {
         Map<String, Set<String>> microserviceToRepositoryMap = new HashMap<>();
 
         Map<String, Map<String, List<String>>> microserviceToServiceImplToRepositoryMap = new LinkedHashMap<>();
+        Map<String, Map<String, Map<String, String>>> repositoryMethodParametersMap = new HashMap<>();
 
         for (String groupName : groupNames) {
             cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", BASE_PATH + groupName);
@@ -181,7 +182,9 @@ public class AutoMigrationApplication {
 
         RepositoryUsageFinder finder = new RepositoryUsageFinder(BASE_PATH, microserviceToRepositoryMap);
         finder.scan();
-        finder.printRepositoryMethodUsage();
+        // finder.printRepositoryMethodUsage();
+        repositoryMethodParametersMap = finder.getRepositoryMethodParameters();
+        System.out.println("repositoryMethodParameters: " + repositoryMethodParametersMap);
     }
 
 
