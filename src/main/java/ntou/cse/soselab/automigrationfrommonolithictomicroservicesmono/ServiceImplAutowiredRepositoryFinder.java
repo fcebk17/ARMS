@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.*;
 
-public class ServiceAutowiredRepositoryFinder {
+public class ServiceImplAutowiredRepositoryFinder {
 
     private final String rootDir;
     private final String serviceFullName;
@@ -17,7 +17,7 @@ public class ServiceAutowiredRepositoryFinder {
     private final Map<String, Boolean> repositoryCache = new HashMap<>();
     private final Map<String, List<String>> autowiredRepositories = new LinkedHashMap<>();
 
-    public ServiceAutowiredRepositoryFinder(String rootDir, String serviceFullName) {
+    public ServiceImplAutowiredRepositoryFinder(String rootDir, String serviceFullName) {
         this.rootDir = rootDir;
         this.serviceFullName = serviceFullName;
     }

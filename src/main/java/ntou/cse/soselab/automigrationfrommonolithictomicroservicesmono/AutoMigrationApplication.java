@@ -1,7 +1,5 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
-import java.io.IOException;
-import java.security.Provider;
 import java.util.*;
 
 public class AutoMigrationApplication {
@@ -107,7 +105,7 @@ public class AutoMigrationApplication {
         // 找到每個 ServiceImpl 中的 repository
         for (String groupName : groupNames) {
             for (String implementation : interfaceToImplementationMap.values()) {
-                ServiceAutowiredRepositoryFinder finder = new ServiceAutowiredRepositoryFinder(BASE_PATH + groupName, implementation);
+                ServiceImplAutowiredRepositoryFinder finder = new ServiceImplAutowiredRepositoryFinder(BASE_PATH + groupName, implementation);
                 finder.scan();
 
                 Map<String, List<String>> currentResult = finder.getAutowiredRepositories();
