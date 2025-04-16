@@ -54,10 +54,22 @@ public class ControllerAutowiredFinder {
             CompilationUnit cu = StaticJavaParser.parse(file);
 
             // 確認是否是 Controller
+//            boolean isController = cu.findAll(ClassOrInterfaceDeclaration.class).stream()
+//                    .anyMatch(cls -> cls.getAnnotations().stream()
+//                            .anyMatch(a -> a.getNameAsString().equals("RestController") ||
+//                                    a.getNameAsString().equals("Controller")));
             boolean isController = cu.findAll(ClassOrInterfaceDeclaration.class).stream()
                     .anyMatch(cls -> cls.getAnnotations().stream()
-                            .anyMatch(a -> a.getNameAsString().equals("RestController") ||
-                                    a.getNameAsString().equals("Controller")));
+                            .anyMatch(a -> {
+                                String name = a.getNameAsString();
+                                boolean result = name.equals("RestController") ||
+                                        name.equals("Controller") ||
+                                        name.endsWith(".Controller");
+                                if (result) {
+                                    System.out.println("Found controller in " + file.getName() + " with annotation " + name);
+                                }
+                                return result;
+                            }));
 
             if (!isController) return;
 
