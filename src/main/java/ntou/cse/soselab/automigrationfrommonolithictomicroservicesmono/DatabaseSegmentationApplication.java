@@ -6,6 +6,7 @@ public class DatabaseSegmentationApplication {
     public static void main(String[] args) throws Exception {
         FileProcessingApplication application = new FileProcessingApplication();
         List<String> groupNames = application.getServiceName();
+//        List<String> groupNames = Arrays.asList("UserManagementService", "ShopService", "OrderService");
 
         String BASE_PATH = "/home/popocorn/output/";
         String packageName = "";
@@ -61,14 +62,14 @@ public class DatabaseSegmentationApplication {
 
             for (String serviceInterface : uniqueServiceInterfaces) {
                 try {
-                    InterfaceImplementationFinder finder = new InterfaceImplementationFinder(
+                    InterfaceImplFinder implFinder = new InterfaceImplFinder(
                             BASE_PATH + groupName,
                             serviceInterface,
                             PACKAGE_NAME
                     );
-                    finder.printImplementations();
+                    implFinder.printImplementations();
 
-                    Map<String, String> partialMap = finder.getInterfaceToImplementationMap();
+                    Map<String, String> partialMap = implFinder.getInterfaceToImplementationMap();
                     System.out.println("Interface to Implementation Map: " + partialMap);
                     // put into interfaceToImplementationMap
                     interfaceToImplementationMap.putAll(partialMap);
@@ -155,6 +156,10 @@ public class DatabaseSegmentationApplication {
         if (!isThereDuplicateRepositories) {
             NoDuplicateRepositoryCleaner cleaner = new NoDuplicateRepositoryCleaner(microserviceToRepositoryMap, BASE_PATH);
             cleaner.cleanUnusedRepositories();
+        }
+
+        else {
+            System.out.println("Duplicate repositories found");
         }
 
         RepositoryUsageFinder finder = new RepositoryUsageFinder(BASE_PATH, microserviceToRepositoryMap);
