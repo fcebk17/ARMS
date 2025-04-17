@@ -153,13 +153,22 @@ public class DatabaseSegmentationApplication {
         boolean isThereDuplicateRepositories = checkForDuplicateRepositories(microserviceToRepositoryMap);
 //        System.out.println("isThereDuplicateRepositories: " + isThereDuplicateRepositories);
 
+        // 判斷是否有重複 repository
         if (!isThereDuplicateRepositories) {
             NoDuplicateRepositoryCleaner cleaner = new NoDuplicateRepositoryCleaner(microserviceToRepositoryMap, BASE_PATH);
             cleaner.cleanUnusedRepositories();
-        }
-
-        else {
+        } else {
             System.out.println("duplicateRepoToServices: " + getDuplicateRepoToServices());
+            for (String moduleName : duplicateRepoToServices.keySet()) {
+                String serviceName = moduleName.substring(moduleName.lastIndexOf(".") + 1) + "Service";
+                String path = BASE_PATH + serviceName;
+
+                // 找到 controller 路徑
+                ControllerPathFinder finder = new ControllerPathFinder(path);
+                String controllerPath = finder.getControllerDirectory();
+                System.out.println(controllerPath);
+            }
+            // TODO
         }
 
         RepositoryUsageFinder finder = new RepositoryUsageFinder(BASE_PATH, microserviceToRepositoryMap);
