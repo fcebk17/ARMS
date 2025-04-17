@@ -1,6 +1,11 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ControllerPathFinder {
     private final String BASE_PATH;
@@ -10,10 +15,6 @@ public class ControllerPathFinder {
         this.BASE_PATH = basePath.endsWith("/") ? basePath : basePath + "/";
     }
 
-    /**
-     * 找出第一個 Controller 檔案的目錄路徑
-     * @return 第一個 Controller 檔案所在的目錄路徑，未找到則返回 null
-     */
     public String getControllerDirectory() {
         File controllerFile = findFirstControllerFile();
 
@@ -23,6 +24,39 @@ public class ControllerPathFinder {
 
         // 返回不包含檔案名稱的目錄路徑
         return controllerFile.getParent() + "/";
+    }
+
+    /**
+     * 找出第一個 Controller 檔案的控制器類型
+     * @return 控制器類型（@Controller 或 @RestController）
+     */
+    public String getControllerAnnotationType() {
+        File controllerFile = findFirstControllerFile();
+
+        if (controllerFile == null) {
+            return "未找到 Controller";
+        }
+
+        try {
+            String content = new String(Files.readAllBytes(Paths.get(controllerFile.getAbsolutePath())));
+
+            // 使用正則表達式檢查控制器註解
+            Pattern restControllerPattern = Pattern.compile("@RestController\\s");
+            Pattern controllerPattern = Pattern.compile("@Controller\\s");
+
+            Matcher restControllerMatcher = restControllerPattern.matcher(content);
+            Matcher controllerMatcher = controllerPattern.matcher(content);
+
+            if (restControllerMatcher.find()) {
+                return "@RestController";
+            } else if (controllerMatcher.find()) {
+                return "@Controller";
+            }
+        } catch (IOException e) {
+            System.err.println("讀取檔案時發生錯誤: " + e.getMessage());
+        }
+
+        return "未找到控制器註解";
     }
 
     /**
@@ -64,10 +98,11 @@ public class ControllerPathFinder {
     }
 
     /**
-     * 列印第一個找到的 Controller 檔案的目錄路徑
+     * 列印第一個找到的 Controller 檔案的目錄路徑和控制器類型
      */
-    public void printFirstControllerDirectory() {
+    public void printControllerInfo() {
         String controllerDirectory = getControllerDirectory();
+        String controllerAnnotationType = getControllerAnnotationType();
 
         if (controllerDirectory == null) {
             System.out.println("偵錯資訊:");
@@ -86,9 +121,11 @@ public class ControllerPathFinder {
             return;
         }
 
-        // 列印找到的 Controller 檔案的目錄路徑
+        // 列印找到的 Controller 檔案的目錄路徑和控制器類型
         System.out.println("找到的第一個 Controller 檔案目錄路徑:");
         System.out.println(controllerDirectory);
+        System.out.println("控制器類型:");
+        System.out.println(controllerAnnotationType);
     }
 
     // 主方法示範使用
@@ -96,6 +133,6 @@ public class ControllerPathFinder {
         String basePath = "/home/popocorn/output/UserDaoService";
 
         ControllerPathFinder finder = new ControllerPathFinder(basePath);
-        finder.printFirstControllerDirectory();
+        finder.printControllerInfo();
     }
 }
