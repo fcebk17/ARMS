@@ -162,11 +162,21 @@ public class DatabaseSegmentationApplication {
             for (String moduleName : duplicateRepoToServices.keySet()) {
                 String serviceName = moduleName.substring(moduleName.lastIndexOf(".") + 1) + "Service";
                 String path = BASE_PATH + serviceName;
+                String controllerName = moduleName.substring(moduleName.lastIndexOf(".") + 1) + "Controller";
 
                 // 找到 controller 路徑
                 ControllerPathFinder finder = new ControllerPathFinder(path);
                 String controllerPath = finder.getControllerDirectory();
                 System.out.println(controllerPath);
+
+                // 建立空的 constructor
+                ControllerGenerator controllerGenerator = new ControllerGenerator(controllerPath, controllerName);
+                controllerGenerator.generateController();
+                if (controllerGenerator.generateController()) {
+                    System.out.println("Controller build success");
+                } else {
+                    System.out.println("Controller build failed");
+                }
             }
             // TODO
         }
