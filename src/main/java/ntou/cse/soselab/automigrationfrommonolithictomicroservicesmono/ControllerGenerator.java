@@ -8,10 +8,18 @@ public class ControllerGenerator {
 
     private String baseDirectory;
     private String controllerName;
+    private String controllerAnnotation;
 
-    public ControllerGenerator(String baseDirectory, String controllerName) {
+    public ControllerGenerator(String baseDirectory, String controllerName, String controllerAnnotation) {
         this.baseDirectory = baseDirectory;
         this.controllerName = controllerName;
+        this.controllerAnnotation = controllerAnnotation;
+
+        // 驗證Controller
+        if (!controllerAnnotation.equals("@RestController") && !controllerAnnotation.equals("@Controller")) {
+            System.out.println("警告：不支持的控制器註解類型，默認使用 @RestController");
+            this.controllerAnnotation = "@RestController";
+        }
     }
 
     public boolean generateController() {
@@ -29,13 +37,20 @@ public class ControllerGenerator {
         // 從路徑中提取包名
         String packageName = extractPackageFromPath(baseDirectory);
 
+        String importStatement;
+        if (controllerAnnotation.equals("@RestController")) {
+            importStatement = "import org.springframework.web.bind.annotation.RestController;\n";
+        } else {
+            importStatement = "import org.springframework.stereotype.Controller;\n";
+        }
+
         // 創建控制器檔案
         File controllerFile = new File(baseDirectory + controllerName + ".java");
 
         try (FileWriter writer = new FileWriter(controllerFile)) {
             String controllerContent = "package " + packageName + ";\n\n"
-                    + "import org.springframework.web.bind.annotation.RestController;\n\n"
-                    + "@RestController\n"
+                    + importStatement + "\n"
+                    + controllerAnnotation + "\n"
                     + "public class " + controllerName + " {\n"
                     + "}\n";
 
@@ -79,8 +94,9 @@ public class ControllerGenerator {
 
         String baseDirectory = "/home/popocorn/output/CustomerDaoService/OnlineShopingApp/src/main/java/com/project/controller/";
         String controllerName = "CustomerDaoController";
+        String controllerAnnotation = "@RestController";
 
-        ControllerGenerator generator = new ControllerGenerator(baseDirectory, controllerName);
+        ControllerGenerator generator = new ControllerGenerator(baseDirectory, controllerName, controllerAnnotation);
         if (generator.generateController()) {
             System.out.println("Controller build success");
         } else {

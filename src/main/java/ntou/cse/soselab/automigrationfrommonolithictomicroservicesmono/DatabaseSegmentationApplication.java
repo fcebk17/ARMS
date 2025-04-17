@@ -169,11 +169,12 @@ public class DatabaseSegmentationApplication {
                 String controllerPath = finder.getControllerDirectory();
                 System.out.println(controllerPath);
 
+                // 找 controller annotation
                 String controllerAnnotation = finder.getControllerAnnotationType();
                 System.out.println(controllerAnnotation);
 
                 // 建立空的 constructor
-                ControllerGenerator controllerGenerator = new ControllerGenerator(controllerPath, controllerName);
+                ControllerGenerator controllerGenerator = new ControllerGenerator(controllerPath, controllerName, controllerAnnotation);
                 controllerGenerator.generateController();
                 if (controllerGenerator.generateController()) {
                     System.out.println("Controller build success");
