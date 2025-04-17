@@ -5,8 +5,8 @@ import java.util.*;
 public class DatabaseSegmentationApplication {
     public static void main(String[] args) throws Exception {
         FileProcessingApplication application = new FileProcessingApplication();
-        List<String> groupNames = application.getServiceName();
-//        List<String> groupNames = Arrays.asList("UserManagementService", "ShopService", "OrderService");
+//        List<String> groupNames = application.getServiceName();
+        List<String> groupNames = Arrays.asList("UserManagementService", "ShopService", "OrderService");
 
         String BASE_PATH = "/home/popocorn/output/";
         String packageName = "";
@@ -159,7 +159,7 @@ public class DatabaseSegmentationApplication {
         }
 
         else {
-            System.out.println("Duplicate repositories found");
+            System.out.println("duplicateRepoToServices: " + getDuplicateRepoToServices());
         }
 
         RepositoryUsageFinder finder = new RepositoryUsageFinder(BASE_PATH, microserviceToRepositoryMap);
@@ -179,18 +179,49 @@ public class DatabaseSegmentationApplication {
         return packageName; // 如果沒有 `.`，則回傳原本的 package
     }
 
+    private static Map<String, List<String>> duplicateRepoToServices = new HashMap<>();
+
     // 判斷是否有重複的 repository
     public static boolean checkForDuplicateRepositories(Map<String, Set<String>> serviceRepoMap) {
-        Set<String> allRepositories = new HashSet<>();
+        duplicateRepoToServices.clear();
 
-        for (Set<String> repoSet : serviceRepoMap.values()) {
-            for (String repo : repoSet) {
-                if (!allRepositories.add(repo)) {
-                    return true; // 重複出現
+        Map<String, List<String>> repoToServices = new HashMap<>();
+
+        // 遍歷每個 Service 及其 repositories
+        for (Map.Entry<String, Set<String>> entry : serviceRepoMap.entrySet()) {
+            String serviceName = entry.getKey();
+            Set<String> repositories = entry.getValue();
+
+            // 記錄每個 repository 對應的 Service
+            for (String repo : repositories) {
+                if (!repoToServices.containsKey(repo)) {
+                    repoToServices.put(repo, new ArrayList<>());
                 }
+                repoToServices.get(repo).add(serviceName);
             }
         }
 
-        return false; // 沒有重複
+        // 找出重複的 repository（出現在多個 Service 中的）
+        boolean hasDuplicate = false;
+
+        for (Map.Entry<String, List<String>> entry : repoToServices.entrySet()) {
+            String repo = entry.getKey();
+            List<String> services = entry.getValue();
+
+            if (services.size() > 1) {
+                hasDuplicate = true;
+                duplicateRepoToServices.put(repo, services);
+            }
+        }
+
+        if (!hasDuplicate) {
+            System.out.println("No duplicate repositories");
+        }
+
+        return hasDuplicate;
+    }
+
+    public static Map<String, List<String>> getDuplicateRepoToServices() {
+        return duplicateRepoToServices;
     }
 }
