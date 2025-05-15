@@ -1,7 +1,13 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
+import lombok.Value;
+import ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono.service.OpenAiEndpointGeneratorService;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
 import java.util.*;
 
+@SpringBootApplication
 public class DatabaseSegmentationApplication {
     public static void main(String[] args) throws Exception {
         FileProcessingApplication application = new FileProcessingApplication();
@@ -20,7 +26,6 @@ public class DatabaseSegmentationApplication {
 
         Map<String, Map<String, List<String>>> microserviceToServiceImplToRepositoryMap = new LinkedHashMap<>();
         Map<String, Map<String, Map<String, String>>> repositoryMethodParametersMap = new HashMap<>();
-
 
         // Search `@Autowired interfaces in each Controller
         for (String groupName : groupNames) {
@@ -153,6 +158,12 @@ public class DatabaseSegmentationApplication {
         boolean isThereDuplicateRepositories = checkForDuplicateRepositories(microserviceToRepositoryMap);
 //        System.out.println("isThereDuplicateRepositories: " + isThereDuplicateRepositories);
 
+        // 找到所有 repository 使用到的 method
+        RepositoryUsageFinder repositoryUsageFinder = new RepositoryUsageFinder(BASE_PATH, microserviceToRepositoryMap);
+        repositoryUsageFinder.scan();
+        repositoryMethodParametersMap = repositoryUsageFinder.getRepositoryMethodParameters();
+        System.out.println("repositoryMethodParameters: " + repositoryMethodParametersMap);
+
         // 判斷是否有重複 repository
         if (!isThereDuplicateRepositories) {
             NoDuplicateRepositoryCleaner cleaner = new NoDuplicateRepositoryCleaner(microserviceToRepositoryMap, BASE_PATH);
@@ -173,23 +184,34 @@ public class DatabaseSegmentationApplication {
                 String controllerAnnotation = finder.getControllerAnnotationType();
                 System.out.println(controllerAnnotation);
 
-                // 建立空的 constructor
+                // 建立空的 controller
                 ControllerGenerator controllerGenerator = new ControllerGenerator(controllerPath, controllerName, controllerAnnotation);
                 controllerGenerator.generateController();
                 if (controllerGenerator.generateController()) {
                     System.out.println("Controller build success");
+
+                    // 呼叫 RestApiMethodInjector，自動插入對應的 REST API
+                    String repoName = moduleName.substring(moduleName.lastIndexOf(".") + 1);
+                    System.out.println("repoName: "+ repoName);
+                    Map<String, Map<String, String>> methodMap = repositoryMethodParametersMap.get(repoName);
+                    System.out.println("methodMap: " + methodMap);
+                    if (methodMap != null) {
+                        RestApiMethodInjector injector = new RestApiMethodInjector(controllerPath, controllerName, methodMap);
+                        injector.inject();
+                    } else {
+                        System.out.println("No method injected into controller");
+                    }
+
                 } else {
                     System.out.println("Controller build failed");
                 }
             }
-            // TODO
+
+            // 建立 DatabaseWrapperImplementer
+            // DatabaseWrapperImplementer databaseWrapperImplementer = new DatabaseWrapperImplementer(repositoryMethodParametersMap, BASE_PATH);
         }
 
-        RepositoryUsageFinder finder = new RepositoryUsageFinder(BASE_PATH, microserviceToRepositoryMap);
-        finder.scan();
-        // finder.printRepositoryMethodUsage();
-        repositoryMethodParametersMap = finder.getRepositoryMethodParameters();
-        System.out.println("repositoryMethodParameters: " + repositoryMethodParametersMap);
+
     }
 
 
