@@ -26,6 +26,8 @@ public class DatabaseSegmentationApplication {
 
         Map<String, Map<String, List<String>>> microserviceToServiceImplToRepositoryMap = new LinkedHashMap<>();
         Map<String, Map<String, Map<String, String>>> repositoryMethodParametersMap = new HashMap<>();
+        Map<String, String> importMap = ImportCollector.getImports();
+        System.out.println("Imports Map: " + importMap);
 
         // Search `@Autowired interfaces in each Controller
         for (String groupName : groupNames) {
