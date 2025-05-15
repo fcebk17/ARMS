@@ -29,26 +29,29 @@ public class RestApiMethodInjector {
         boolean insertedConstructor = false;
         boolean insertedMethods = false;
 
-        for (String line : originalLines) {
-            modifiedLines.add(line);
+        for (int i = 0; i < originalLines.size(); i++) {
+            String line = originalLines.get(i);
 
             if (!insertedConstructor && line.contains("public class")) {
-                String repositoryType = controllerName.replace("Controller", "");
+                modifiedLines.add(line);
                 modifiedLines.add("");
+                String repositoryType = controllerName.replace("Controller", "");
                 modifiedLines.add("    private final " + repositoryType + " repository;");
                 modifiedLines.add("");
                 modifiedLines.add("    public " + controllerName + "(" + repositoryType + " repository) {");
                 modifiedLines.add("        this.repository = repository;");
                 modifiedLines.add("    }");
                 insertedConstructor = true;
+                continue;
             }
 
+            // Delay adding class-closing brace so methods go inside the class
             if (!insertedMethods && line.trim().equals("}")) {
                 for (Map.Entry<String, Map<String, String>> methodEntry : repositoryMethodsMap.entrySet()) {
                     String methodName = methodEntry.getKey();
                     Map<String, String> paramMap = methodEntry.getValue();
 
-                    if (paramMap.size() != 1) continue; // 暫時只支援單參數
+                    if (paramMap.size() != 1) continue; // Only support single-parameter methods for now
 
                     String paramType = paramMap.keySet().iterator().next();
                     String paramName = paramMap.get(paramType);
@@ -63,6 +66,9 @@ public class RestApiMethodInjector {
                     modifiedLines.add("    }");
                 }
                 insertedMethods = true;
+                modifiedLines.add(line); // now add the closing }
+            } else {
+                modifiedLines.add(line);
             }
         }
 
