@@ -1,11 +1,13 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono.service;
 
 import ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono.ChatRequest;
+import ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono.FileUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,5 +45,13 @@ public class OpenAiService {
         Map<String, Object> messageObj = (Map<String, Object>) firstChoice.get("message");
 
         return messageObj.get("content").toString();
+    }
+
+    public String askGptWithCodeFile(String filePath, String question) throws IOException {
+        String codeContent = FileUtil.readFile(filePath);
+
+        String fullPrompt = String.format("Please read the following code of file and answer the questions: \n\n%s\n\n", codeContent, question);
+
+        return chatWithGpt(fullPrompt);
     }
 }
