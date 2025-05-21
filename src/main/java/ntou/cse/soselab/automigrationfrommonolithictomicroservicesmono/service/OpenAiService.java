@@ -21,6 +21,7 @@ public class OpenAiService {
 
     // OpenAI Chat Completions 的 REST API endpoint
     private static final String API_URL = "https://api.openai.com/v1/chat/completions";
+
     public String chatWithGpt(String userPrompt) {
         RestTemplate restTemplate = new RestTemplate();
 
