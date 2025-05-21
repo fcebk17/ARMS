@@ -1,8 +1,11 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 import javax.xml.crypto.Data;
 import java.util.*;
 
+@SpringBootApplication
 public class AutoMigrationApplication {
     public static void main(String[] args) throws Exception {
 
