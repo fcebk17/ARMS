@@ -9,11 +9,16 @@ public class RestApiMethodInjector {
     private final String controllerPath;
     private final String controllerName;
     private final Map<String, Map<String, String>> repositoryMethodsMap;
+    private final Map<String, String> importMap;
 
-    public RestApiMethodInjector(String controllerPath, String controllerName, Map<String, Map<String, String>> repositoryMethodsMap) {
+    public RestApiMethodInjector(String controllerPath,
+                                 String controllerName,
+                                 Map<String, Map<String, String>> repositoryMethodsMap,
+                                 Map<String, String> importMap) {
         this.controllerPath = controllerPath;
         this.controllerName = controllerName;
         this.repositoryMethodsMap = repositoryMethodsMap;
+        this.importMap = importMap;
     }
 
     public void inject() throws IOException {
@@ -26,32 +31,57 @@ public class RestApiMethodInjector {
 
         List<String> originalLines = Files.readAllLines(controllerFile.toPath());
         List<String> modifiedLines = new ArrayList<>();
-        boolean insertedConstructor = false;
-        boolean insertedMethods = false;
+
+        Set<String> neededImports = new LinkedHashSet<>();
+        String repositoryType = controllerName.replace("Controller", "");
+        neededImports.add(repositoryType); // 需要加 repository 的 import
+
+        for (Map.Entry<String, Map<String, String>> entry : repositoryMethodsMap.entrySet()) {
+            Map<String, String> paramMap = entry.getValue();
+            if (paramMap.size() == 1) {
+                neededImports.addAll(paramMap.keySet()); // 加入參數型別（例如 User、String）
+            }
+        }
+
+        boolean packageInserted = false;
+        boolean constructorInserted = false;
+        boolean methodsInserted = false;
 
         for (int i = 0; i < originalLines.size(); i++) {
             String line = originalLines.get(i);
 
-            if (!insertedConstructor && line.contains("public class")) {
+            // 找到 package 行 → 在下一行插入 import
+            if (!packageInserted && line.startsWith("package ")) {
+                modifiedLines.add(line);
+                modifiedLines.add(""); // 空行
+                for (String key : neededImports) {
+                    if (importMap.containsKey(key)) {
+                        modifiedLines.add(importMap.get(key));
+                    }
+                }
+                packageInserted = true;
+                continue;
+            }
+
+            // 插入 constructor
+            if (!constructorInserted && line.contains("public class")) {
                 modifiedLines.add(line);
                 modifiedLines.add("");
-                String repositoryType = controllerName.replace("Controller", "");
                 modifiedLines.add("    private final " + repositoryType + " repository;");
                 modifiedLines.add("");
                 modifiedLines.add("    public " + controllerName + "(" + repositoryType + " repository) {");
                 modifiedLines.add("        this.repository = repository;");
                 modifiedLines.add("    }");
-                insertedConstructor = true;
+                constructorInserted = true;
                 continue;
             }
 
-            // Delay adding class-closing brace so methods go inside the class
-            if (!insertedMethods && line.trim().equals("}")) {
+            // 插入 REST API 方法
+            if (!methodsInserted && line.trim().equals("}")) {
                 for (Map.Entry<String, Map<String, String>> methodEntry : repositoryMethodsMap.entrySet()) {
                     String methodName = methodEntry.getKey();
                     Map<String, String> paramMap = methodEntry.getValue();
-
-                    if (paramMap.size() != 1) continue; // Only support single-parameter methods for now
+                    if (paramMap.size() != 1) continue;
 
                     String paramType = paramMap.keySet().iterator().next();
                     String paramName = paramMap.get(paramType);
@@ -65,15 +95,15 @@ public class RestApiMethodInjector {
                     modifiedLines.add("        repository." + methodName + "(" + paramName + ");");
                     modifiedLines.add("    }");
                 }
-                insertedMethods = true;
-                modifiedLines.add(line); // now add the closing }
+                methodsInserted = true;
+                modifiedLines.add(line); // 加上最後的 }
             } else {
                 modifiedLines.add(line);
             }
         }
 
         Files.write(Paths.get(controllerFilePath), modifiedLines);
-        System.out.println("✅ Injected REST methods into: " + controllerFilePath);
+        System.out.println("✅ Injected REST methods + imports into: " + controllerFilePath);
     }
 
     private String guessHttpMethod(String methodName) {
