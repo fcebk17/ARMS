@@ -1,9 +1,32 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class ImportCollector {
+
+    private final String folderPath;
+
+    public ImportCollector(String folderPath) {
+        this.folderPath = folderPath;
+    }
+
+    public Map<String, String> getAllImports() throws IOException {
+        Map<String, String> mergedImports = new LinkedHashMap<>();
+
+        mergedImports.putAll(getImports());
+
+        Map<String, String> classImports = getClassImportsFromPath(this.folderPath);
+        mergedImports.putAll(classImports);
+
+        return mergedImports;
+    }
 
     public static Map<String, String> getImports() {
         Map<String, String> importMap = new LinkedHashMap<>();
@@ -61,10 +84,63 @@ public class ImportCollector {
         return importMap;
     }
 
+    public static Map<String, String> getClassImportsFromPath(String folderPath) throws IOException {
+        Map<String, String> classImportMap = new LinkedHashMap<>();
+        Path rootPath = Paths.get(folderPath);
+
+        if (!Files.exists(rootPath)) {
+            throw new IllegalArgumentException("路徑不存在: " + folderPath);
+        }
+
+        try (Stream<Path> paths = Files.walk(rootPath)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .forEach(file -> {
+                        try {
+                            List<String> lines = Files.readAllLines(file);
+                            String packageName = null;
+                            String className = null;
+
+                            for (String line : lines) {
+                                line = line.trim();
+                                if (line.startsWith("package ")) {
+                                    packageName = line.replace("package", "")
+                                            .replace(";", "")
+                                            .trim();
+                                }
+                                if (line.startsWith("public class ") || line.startsWith("class ")) {
+                                    String[] parts = line.split("\\s+");
+                                    for (int i = 0; i < parts.length; i++) {
+                                        if (parts[i].equals("class") && i + 1 < parts.length) {
+                                            className = parts[i + 1];
+                                            break;
+                                        }
+                                    }
+                                    break; // 偵測到 class 就可以離開
+                                }
+                            }
+
+                            if (packageName != null && className != null) {
+                                classImportMap.put(className, "import " + packageName + "." + className + ";");
+                            }
+
+                        } catch (IOException e) {
+                            System.err.println("Failed to read: " + file + " -> " + e.getMessage());
+                        }
+                    });
+        }
+
+        return classImportMap;
+    }
+
     // 測試用 main（可選）
-    public static void main(String[] args) {
-        Map<String, String> imports = getImports();
-        imports.forEach((key, value) -> System.out.println(key + " -> " + value));
+    public static void main(String[] args) throws IOException {
+
+        ImportCollector importCollector = new ImportCollector("/home/popocorn/test-project/Online-Shopping-App-SpringBoot-/OnlineShopingApp/src/main/java/com/project");
+
+        Map<String, String> mergedImports = importCollector.getAllImports();
+        mergedImports.forEach((k, v) -> System.out.println(k + " -> " + v));
+        System.out.println("map length: " + mergedImports.size());
     }
 }
 
