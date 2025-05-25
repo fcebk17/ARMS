@@ -26,7 +26,9 @@ public class DatabaseSegmentationApplication {
 
         Map<String, Map<String, List<String>>> microserviceToServiceImplToRepositoryMap = new LinkedHashMap<>();
         Map<String, Map<String, Map<String, String>>> repositoryMethodParametersMap = new HashMap<>();
-        Map<String, String> importMap = ImportCollector.getImports();
+
+        ImportCollector collector = new ImportCollector("/home/popocorn/test-project/Online-Shopping-App-SpringBoot-/OnlineShopingApp/src/main/java/com/project");
+        Map<String, String> importMap = collector.getAllImports();
         System.out.println("Imports Map: " + importMap);
 
         // Search `@Autowired interfaces in each Controller
@@ -209,8 +211,7 @@ public class DatabaseSegmentationApplication {
                 }
             }
 
-            // 建立 DatabaseWrapperImplementer
-            // DatabaseWrapperImplementer databaseWrapperImplementer = new DatabaseWrapperImplementer(repositoryMethodParametersMap, BASE_PATH);
+
         }
 
 
