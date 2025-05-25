@@ -42,6 +42,11 @@ public class RestApiMethodInjector {
                 "RequestParam", "import org.springframework.web.bind.annotation.RequestParam;"
         );
 
+        // Java Standard Imports
+        Map<String, String> standardJavaImports = Map.of(
+                "Optional", "import java.util.Optional;"
+        );
+
         Set<String> neededImports = new LinkedHashSet<>();
         String repositoryType = controllerName.replace("Controller", "");
         neededImports.add(repositoryType); // 需要加 repository 的 import
@@ -51,9 +56,9 @@ public class RestApiMethodInjector {
             Map<String, String> paramMap = entry.getValue();
 
             if (paramMap.size() != 1) continue;
-            String paramType = paramMap.keySet().iterator().next();
 
-            neededImports.add(paramType); // 加參數類別
+            String fullParamType = paramMap.keySet().iterator().next();
+            neededImports.addAll(extractTypesFromGeneric(fullParamType)); // 支援泛型（例如 Optional<Customer>）
 
             // 根據推論 HTTP method，加入對應註解 import
             String httpMethod = guessHttpMethod(methodName);
@@ -80,15 +85,17 @@ public class RestApiMethodInjector {
         for (int i = 0; i < originalLines.size(); i++) {
             String line = originalLines.get(i);
 
-            // 找到 package 行 → 在下一行插入 import
+            // 插入 import 區塊
             if (!packageInserted && line.startsWith("package ")) {
                 modifiedLines.add(line);
-                modifiedLines.add(""); // 空行
+                modifiedLines.add("");
                 for (String key : neededImports) {
                     if (importMap.containsKey(key)) {
                         modifiedLines.add(importMap.get(key));
                     } else if (springAnnotationImports.containsKey(key)) {
                         modifiedLines.add(springAnnotationImports.get(key));
+                    } else if (standardJavaImports.containsKey(key)) {
+                        modifiedLines.add(standardJavaImports.get(key));
                     }
                 }
                 packageInserted = true;
@@ -161,5 +168,19 @@ public class RestApiMethodInjector {
         } else {
             return "@RequestBody " + paramType + " " + paramName;
         }
+    }
+
+    // ✅ 萃取泛型中的主類型，例如 Optional<Customer> → Optional, Customer
+    private Set<String> extractTypesFromGeneric(String type) {
+        Set<String> types = new LinkedHashSet<>();
+        if (type.contains("<") && type.contains(">")) {
+            String mainType = type.substring(0, type.indexOf("<")).trim();
+            String innerType = type.substring(type.indexOf("<") + 1, type.lastIndexOf(">")).trim();
+            types.add(mainType);
+            types.add(innerType);
+        } else {
+            types.add(type.trim());
+        }
+        return types;
     }
 }
