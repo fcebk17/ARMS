@@ -89,7 +89,7 @@ public class ImportCollector {
         Path rootPath = Paths.get(folderPath);
 
         if (!Files.exists(rootPath)) {
-            throw new IllegalArgumentException("路徑不存在: " + folderPath);
+            throw new IllegalArgumentException("❌ 路徑不存在: " + folderPath);
         }
 
         try (Stream<Path> paths = Files.walk(rootPath)) {
@@ -104,24 +104,33 @@ public class ImportCollector {
                             for (String line : lines) {
                                 line = line.trim();
                                 if (line.startsWith("package ")) {
-                                    packageName = line.replace("package", "")
-                                            .replace(";", "")
-                                            .trim();
+                                    packageName = line.replace("package", "").replace(";", "").trim();
                                 }
-                                if (line.startsWith("public class ") || line.startsWith("class ")) {
+
+                                // DEBUG: 印出每一行
+                                // System.out.println("line: " + line);
+
+                                if (line.contains("class ") || line.contains("interface ") ||
+                                        line.contains("record ") || line.contains("enum ")) {
+
                                     String[] parts = line.split("\\s+");
                                     for (int i = 0; i < parts.length; i++) {
-                                        if (parts[i].equals("class") && i + 1 < parts.length) {
-                                            className = parts[i + 1];
+                                        if ((parts[i].equals("class") || parts[i].equals("interface") ||
+                                                parts[i].equals("record") || parts[i].equals("enum")) && i + 1 < parts.length) {
+                                            className = parts[i + 1].replace("{", "").trim(); // 去掉尾部大括號
                                             break;
                                         }
                                     }
-                                    break; // 偵測到 class 就可以離開
+
+                                    if (className != null) break; // 找到了就退出
                                 }
                             }
 
                             if (packageName != null && className != null) {
-                                classImportMap.put(className, "import " + packageName + "." + className + ";");
+                                String importLine = "import " + packageName + "." + className + ";";
+                                classImportMap.put(className, importLine);
+                            } else {
+                                System.out.println("Skipped: " + file.getFileName() + " (package/class info missing)");
                             }
 
                         } catch (IOException e) {
