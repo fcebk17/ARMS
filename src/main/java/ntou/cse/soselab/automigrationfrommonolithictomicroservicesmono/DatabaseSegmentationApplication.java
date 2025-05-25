@@ -200,7 +200,7 @@ public class DatabaseSegmentationApplication {
                     Map<String, Map<String, String>> methodMap = repositoryMethodParametersMap.get(repoName);
                     System.out.println("methodMap: " + methodMap);
                     if (methodMap != null) {
-                        RestApiMethodInjector injector = new RestApiMethodInjector(controllerPath, controllerName, methodMap);
+                        RestApiMethodInjector injector = new RestApiMethodInjector(controllerPath, controllerName, methodMap, importMap);
                         injector.inject();
                     } else {
                         System.out.println("No method injected into controller");
