@@ -32,14 +32,44 @@ public class RestApiMethodInjector {
         List<String> originalLines = Files.readAllLines(controllerFile.toPath());
         List<String> modifiedLines = new ArrayList<>();
 
+        // 自動推論的 Spring 註解 imports
+        Map<String, String> springAnnotationImports = Map.of(
+                "RestController", "import org.springframework.web.bind.annotation.RestController;",
+                "PostMapping", "import org.springframework.web.bind.annotation.PostMapping;",
+                "GetMapping", "import org.springframework.web.bind.annotation.GetMapping;",
+                "DeleteMapping", "import org.springframework.web.bind.annotation.DeleteMapping;",
+                "RequestBody", "import org.springframework.web.bind.annotation.RequestBody;",
+                "RequestParam", "import org.springframework.web.bind.annotation.RequestParam;"
+        );
+
         Set<String> neededImports = new LinkedHashSet<>();
         String repositoryType = controllerName.replace("Controller", "");
         neededImports.add(repositoryType); // 需要加 repository 的 import
 
         for (Map.Entry<String, Map<String, String>> entry : repositoryMethodsMap.entrySet()) {
+            String methodName = entry.getKey();
             Map<String, String> paramMap = entry.getValue();
-            if (paramMap.size() == 1) {
-                neededImports.addAll(paramMap.keySet()); // 加入參數型別（例如 User、String）
+
+            if (paramMap.size() != 1) continue;
+            String paramType = paramMap.keySet().iterator().next();
+
+            neededImports.add(paramType); // 加參數類別
+
+            // 根據推論 HTTP method，加入對應註解 import
+            String httpMethod = guessHttpMethod(methodName);
+            switch (httpMethod) {
+                case "GET":
+                    neededImports.add("GetMapping");
+                    neededImports.add("RequestParam");
+                    break;
+                case "POST":
+                    neededImports.add("PostMapping");
+                    neededImports.add("RequestBody");
+                    break;
+                case "DELETE":
+                    neededImports.add("DeleteMapping");
+                    neededImports.add("RequestBody");
+                    break;
             }
         }
 
@@ -57,6 +87,8 @@ public class RestApiMethodInjector {
                 for (String key : neededImports) {
                     if (importMap.containsKey(key)) {
                         modifiedLines.add(importMap.get(key));
+                    } else if (springAnnotationImports.containsKey(key)) {
+                        modifiedLines.add(springAnnotationImports.get(key));
                     }
                 }
                 packageInserted = true;
@@ -81,6 +113,7 @@ public class RestApiMethodInjector {
                 for (Map.Entry<String, Map<String, String>> methodEntry : repositoryMethodsMap.entrySet()) {
                     String methodName = methodEntry.getKey();
                     Map<String, String> paramMap = methodEntry.getValue();
+
                     if (paramMap.size() != 1) continue;
 
                     String paramType = paramMap.keySet().iterator().next();
@@ -96,14 +129,14 @@ public class RestApiMethodInjector {
                     modifiedLines.add("    }");
                 }
                 methodsInserted = true;
-                modifiedLines.add(line); // 加上最後的 }
+                modifiedLines.add(line); // 最後加上 class 的 }
             } else {
                 modifiedLines.add(line);
             }
         }
 
         Files.write(Paths.get(controllerFilePath), modifiedLines);
-        System.out.println("✅ Injected REST methods + imports into: " + controllerFilePath);
+        System.out.println("Injected REST methods + imports into: " + controllerFilePath);
     }
 
     private String guessHttpMethod(String methodName) {
