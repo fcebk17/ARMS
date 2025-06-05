@@ -9,6 +9,10 @@ import java.util.*;
 
 @SpringBootApplication
 public class DatabaseSegmentationApplication {
+
+    private static final Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
+    private static final Set<Map<String, List<String>>> serviceToRepositorySet = new LinkedHashSet<>();
+
     public static void main(String[] args) throws Exception {
 //        FileProcessingApplication application = new FileProcessingApplication();
 //        List<String> groupNames = application.getServiceName();
@@ -18,9 +22,9 @@ public class DatabaseSegmentationApplication {
         String packageName = "";
         final String PACKAGE_NAME;
 
-        Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
+//        Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
         Map<String, String> interfaceToImplementationMap = new LinkedHashMap<>();
-        Set<Map<String, List<String>>> serviceToRepositorySet = new LinkedHashSet<>();
+//        Set<Map<String, List<String>>> serviceToRepositorySet = new LinkedHashSet<>();
 
         Map<String, Set<String>> microserviceToRepositoryMap = new HashMap<>();
 
@@ -271,5 +275,13 @@ public class DatabaseSegmentationApplication {
 
     public static Map<String, List<String>> getDuplicateRepoToServices() {
         return duplicateRepoToServices;
+    }
+
+    public static Map<String, Map<String, List<String>>> getControllerToServiceMap() {
+        return controllerToServiceMap;
+    }
+
+    public static Set<Map<String, List<String>>> getServiceToRepositorySet() {
+        return serviceToRepositorySet;
     }
 }
