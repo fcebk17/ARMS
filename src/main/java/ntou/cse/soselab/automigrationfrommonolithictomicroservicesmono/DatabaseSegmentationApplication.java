@@ -22,9 +22,9 @@ public class DatabaseSegmentationApplication {
         String packageName = "";
         final String PACKAGE_NAME;
 
-//        Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
+        Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
         Map<String, String> interfaceToImplementationMap = new LinkedHashMap<>();
-//        Set<Map<String, List<String>>> serviceToRepositorySet = new LinkedHashSet<>();
+        Set<Map<String, List<String>>> serviceToRepositorySet = new LinkedHashSet<>();
 
         Map<String, Set<String>> microserviceToRepositoryMap = new HashMap<>();
 
@@ -183,10 +183,11 @@ public class DatabaseSegmentationApplication {
                 String path = BASE_PATH + serviceName;
                 String controllerName = moduleName.substring(moduleName.lastIndexOf(".") + 1) + "Controller";
 
+                System.out.println("path: " + path);
                 // 找到 controller 路徑
                 ControllerPathFinder finder = new ControllerPathFinder(path);
                 String controllerPath = finder.getControllerDirectory();
-                System.out.println(controllerPath);
+                System.out.println("ControllerPath: " + controllerPath);
 
                 // 找 controller annotation
                 String controllerAnnotation = finder.getControllerAnnotationType();

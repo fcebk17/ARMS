@@ -8,14 +8,14 @@ public class FileProcessingApplication {
         List<String> groupNames = getServiceName();
 
         CloneProject cloneProject = new CloneProject();
-        String BASE_PATH = "/home/popocorn/output/";
+        String BASE_PATH = "/home/popocorn/output_test";
 
         for (String groupName : groupNames) {
-            cloneProject.copyDirectory("/home/popocorn/test-project/E-Commerce-Application", BASE_PATH + groupName);
+            cloneProject.copyDirectory("/home/popocorn/test-project/Online-Shopping-App-SpringBoot-", BASE_PATH + groupName);
 
             // modify pom.xml by JDOM
             try {
-                ModifyMavenSetting modifyMavenSetting = new ModifyMavenSetting(BASE_PATH + groupName +"/ECommerceApplication/pom.xml");
+                ModifyMavenSetting modifyMavenSetting = new ModifyMavenSetting(BASE_PATH + groupName +"/OnlineShopingApp/pom.xml");
                 modifyMavenSetting.loadPomFile();
                 modifyMavenSetting.modifyArtifactId(groupName);
                 modifyMavenSetting.modifyName(groupName);
