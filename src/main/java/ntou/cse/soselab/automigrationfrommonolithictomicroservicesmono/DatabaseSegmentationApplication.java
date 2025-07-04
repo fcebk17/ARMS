@@ -10,11 +10,11 @@ import java.util.*;
 @SpringBootApplication
 public class DatabaseSegmentationApplication {
     public static void main(String[] args) throws Exception {
-        FileProcessingApplication application = new FileProcessingApplication();
+//        FileProcessingApplication application = new FileProcessingApplication();
 //        List<String> groupNames = application.getServiceName();
-        List<String> groupNames = Arrays.asList("UserManagementService", "ShopService", "OrderService");
+        List<String> groupNames = Arrays.asList("AccountService", "ProductService", "TransactionService");
 
-        String BASE_PATH = "/home/popocorn/output/";
+        String BASE_PATH = "/home/popocorn/output_book_store/";
         String packageName = "";
         final String PACKAGE_NAME;
 
@@ -27,7 +27,7 @@ public class DatabaseSegmentationApplication {
         Map<String, Map<String, List<String>>> microserviceToServiceImplToRepositoryMap = new LinkedHashMap<>();
         Map<String, Map<String, Map<String, String>>> repositoryMethodParametersMap = new HashMap<>();
 
-        ImportCollector collector = new ImportCollector("/home/popocorn/test-project/Online-Shopping-App-SpringBoot-/OnlineShopingApp/src/main/java/com/project");
+        ImportCollector collector = new ImportCollector("/home/popocorn/test-project/book-store-api/src/main/java/com/example/bookstore_api");
         Map<String, String> importMap = collector.getAllImports();
         System.out.println("Imports Map: " + importMap);
 

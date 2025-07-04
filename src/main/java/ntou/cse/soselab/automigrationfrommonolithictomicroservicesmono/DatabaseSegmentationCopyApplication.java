@@ -2,6 +2,9 @@ package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 
 @SpringBootApplication
@@ -66,22 +69,23 @@ public class DatabaseSegmentationCopyApplication {
                 uniqueServiceInterfaces.addAll(serviceList);
             }
 
-            for (String serviceInterface : uniqueServiceInterfaces) {
-                try {
+            for (String serviceType : uniqueServiceInterfaces) {
+                if (isInterface(serviceType, BASE_PATH + groupName, PACKAGE_NAME)) {
                     InterfaceImplFinder implFinder = new InterfaceImplFinder(
                             BASE_PATH + groupName,
-                            serviceInterface,
+                            serviceType,
                             PACKAGE_NAME
                     );
                     implFinder.printImplementations();
-
                     Map<String, String> partialMap = implFinder.getInterfaceToImplementationMap();
                     System.out.println("Interface to Implementation Map: " + partialMap);
                     // put into interfaceToImplementationMap
                     interfaceToImplementationMap.putAll(partialMap);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
+                }
+                else {
+                    System.out.println("I'm normal class");
+                    // Class case，自己是實作
+                    interfaceToImplementationMap.put(serviceType, serviceType);
                 }
             }
         }
@@ -176,14 +180,16 @@ public class DatabaseSegmentationCopyApplication {
                 String path = BASE_PATH + serviceName;
                 String controllerName = moduleName.substring(moduleName.lastIndexOf(".") + 1) + "Controller";
 
+                System.out.println("path: " + path);
+
                 // 找到 controller 路徑
                 ControllerPathFinder finder = new ControllerPathFinder(path);
                 String controllerPath = finder.getControllerDirectory();
-                System.out.println(controllerPath);
+                System.out.println("Controller Path: " + controllerPath);
 
                 // 找 controller annotation
                 String controllerAnnotation = finder.getControllerAnnotationType();
-                System.out.println(controllerAnnotation);
+                System.out.println("Controller Annotation: " + controllerAnnotation);
 
                 // 建立空的 controller
                 ControllerGenerator controllerGenerator = new ControllerGenerator(controllerPath, controllerName, controllerAnnotation);
@@ -213,6 +219,29 @@ public class DatabaseSegmentationCopyApplication {
 
 
     }
+
+    public static boolean isInterface(String typeName, String basePath, String packageName) {
+        // 取得完整路徑
+        String path = basePath + "/" + typeName.replace('.', '/') + ".java";
+        File file = new File(path);
+        if (!file.exists()) return false; // 沒找到當作 class
+        try {
+            List<String> lines = Files.readAllLines(file.toPath());
+            for (String line : lines) {
+                line = line.trim();
+                if (line.startsWith("public interface " + typeName) || line.startsWith("interface " + typeName)) {
+                    return true;
+                }
+                if (line.startsWith("public class " + typeName) || line.startsWith("class " + typeName)) {
+                    return false;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false; // 預設是 class
+    }
+
 
 
     // 刪除 package 名稱的最後一層 (e.g., com.app.controllers -> com.app)

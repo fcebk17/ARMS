@@ -80,7 +80,7 @@ public class ControllerAutowiredFinder {
 
 
             // 儲存所有 @Autowired 且為 Interface 的變數型別
-            List<String> autowiredInterfaces = new ArrayList<>();
+            List<String> autowiredTypes = new ArrayList<>();
 
             // 找出 @Autowired 且為 Interface 的成員變數
             cu.accept(new VoidVisitorAdapter<Void>() {
@@ -90,11 +90,13 @@ public class ControllerAutowiredFinder {
                     if (fd.isAnnotationPresent("Autowired")) {
                         fd.getVariables().forEach(var -> {
                             String fieldType = var.getTypeAsString();
-                            if (isInterface(fieldType, javaFiles)) {
-                                String qualifiedName = findQualifiedName(fieldType, javaFiles);
-                                if (qualifiedName != null) {
-                                    autowiredInterfaces.add(qualifiedName);
-                                }
+                            // 嘗試找 qualified name，找不到就用 type 名稱
+                            String qualifiedName = findQualifiedName(fieldType, javaFiles);
+                            if (qualifiedName != null) {
+                                autowiredTypes.add(qualifiedName);
+                            }
+                            else {
+                                autowiredTypes.add(fieldType);
                             }
                         });
                     }
@@ -102,9 +104,9 @@ public class ControllerAutowiredFinder {
             }, null);
 
             // 如果有找到 @Autowired Interface，存入 Map，並加上 package name
-            if (!autowiredInterfaces.isEmpty()) {
+            if (!autowiredTypes.isEmpty()) {
                 String key = packageName + "." + file.getName(); // 使用 package name + 檔案名稱作為 key
-                controllerAutowiredMap.put(key, autowiredInterfaces);
+                controllerAutowiredMap.put(key, autowiredTypes);
             }
 
             // Debug: 印出找到的 package 和檔案名稱
