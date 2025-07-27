@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>處理結果 - 微服務資料庫分割工具</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      font-weight: 300;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .alert-success {
+      background: #e8f5e8;
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 30px;
+      font-weight: 500;
+    }
+
+    .result-section {
+      margin-bottom: 40px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      background: #f5f5f5;
+      padding: 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .section-header h2 {
+      color: #333;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-content {
+      padding: 20px;
+    }
+
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .card h3 {
+      color: #4CAF50;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+
+    .mapping-list {
+      list-style: none;
+      padding-left: 20px;
+    }
+
+    .mapping-list li {
+      margin-bottom: 8px;
+      padding: 8px;
+      background: white;
+      border-radius: 4px;
+      border-left: 4px solid #2196F3;
+    }
+
+    .repository-item {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 4px 8px;
+      border-radius: 12px;
+      margin: 2px;
+      font-size: 0.9rem;
+    }
+
+    .duplicate-warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .no-duplicate-info {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+      margin-left: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #545b62;
+      transform: translateY(-2px);
+    }
+
+    .actions {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 30px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .json-view {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .toggle-btn {
+      background: #17a2b8;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .toggle-btn:hover {
+      background: #138496;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin: 10px;
+        border-radius: 10px;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .content {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>✅ 處理完成</h1>
+    <p>微服務資料庫分割結果</p>
+  </div>
+
+  <div class="content">
+    <div class="alert-success" th:if="${success}">
+      <strong>🎉 成功！</strong> <span th:text="${success}"></span>
+    </div>
+
+    <!-- Controller到Service的映射 -->
+    <div class="result-section">
+      <div class="section-header">
+        <h2>🎯 Controller 到 Service 映射</h2>
+      </div>
+      <div class="section-content">
+        <div th:each="microservice : ${result.controllerToServiceMap}" class="card">
+          <h3 th:text="${microservice.key}">微服務名稱</h3>
+          <ul class="mapping-list">
+            <li th:each="controller : ${microservice.value}">
+              <strong th:text="${controller.key}">Controller</strong> →
+              <span th:each="service : ${controller.value}" class="repository-item" th:text="${service}">Service</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 介面到實作的映射 -->
+    <div class="result-section">
+      <div class="section-header">
+        <h2>🔗 介面到實作類別映射</h2>
+      </div>
+      <div class="section-content">
+        <button class="toggle-btn" onclick="toggleDetail('interface-impl-detail')">顯示/隱藏詳細資訊</button>
+        <div id="interface-impl-detail" class="json-view" style="display: none;">
+          <pre th:text="${#maps.toString(result.interfaceToImplementationMap)}">介面映射資料</pre>
+        </div>
+        <p><strong>總共找到 <span th:text="${#maps.size(result.interfaceToImplementationMap)}">0</span> 個介面映射</strong></p>
+      </div>
+    </div>
+
+    <!-- 微服務到Repository的映射 -->
+    <div class="result-section">
+      <div class="section-header">
+        <h2>🗄️ 微服務到 Repository 映射</h2>
+      </div>
+      <div class="section-content">
+        <div th:each="microservice : ${result.microserviceToRepositoryMap}" class="card">
+          <h3 th:text="${microservice.key}">微服務名稱</h3>
+          <div>
+            <span th:each="repo : ${microservice.value}" class="repository-item" th:text="${repo}">Repository</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 重複Repository檢查結果 -->
+    <div class="result-section">
+      <div class="section-header">
+        <h2>⚠️ Repository 重複檢查</h2>
+      </div>
+      <div class="section-content">
+        <div th:if="${result.hasDuplicateRepositories}" class="duplicate-warning">
+          <strong>⚠️ 發現重複的 Repository！</strong>
+          <p>以下 Repository 被多個微服務使用，系統將自動建立專用的 Controller：</p>
+          <div th:each="duplicate : ${result.duplicateRepositories}" class="card">
+            <h4 th:text="${duplicate.key}">Repository 名稱</h4>
+            <p>被以下微服務使用：
+              <span th:each="service : ${duplicate.value}" class="repository-item" th:text="${service}">Service</span>
+            </p>
+          </div>
+        </div>
+        <div th:unless="${result.hasDuplicateRepositories}" class="no-duplicate-info">
+          <strong>✅ 沒有發現重複的 Repository</strong>
+          <p>所有 Repository 都已正確分配到各自的微服務中，可以直接進行清理作業。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 詳細結果數據 -->
+    <div class="result-section">
+      <div class="section-header">
+        <h2>📊 詳細結果數據</h2>
+      </div>
+      <div class="section-content">
+        <button class="toggle-btn" onclick="toggleDetail('raw-data')">顯示/隱藏原始數據</button>
+        <div id="raw-data" class="json-view" style="display: none;">
+          <h4>Controller到Service映射：</h4>
+          <pre th:text="${#maps.toString(result.controllerToServiceMap)}">Controller映射數據</pre>
+
+          <h4>微服務到Repository映射：</h4>
+          <pre th:text="${#maps.toString(result.microserviceToRepositoryMap)}">Repository映射數據</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a href="/" class="btn btn-primary">🔄 重新處理</a>
+      <button class="btn btn-secondary" onclick="window.print()">🖨️ 列印結果</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleDetail(elementId) {
+    const element = document.getElementById(elementId);
+    if (element.style.display === 'none') {
+      element.style.display = 'block';
+    } else {
+      element.style.display = 'none';
+    }
+  }
+
+  // 頁面載入完成後的處理
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('結果頁面載入完成');
+
+    // 自動捲動到頂部
+    window.scrollTo(0, 0);
+  });
+</script>
+</body>
+</html>
