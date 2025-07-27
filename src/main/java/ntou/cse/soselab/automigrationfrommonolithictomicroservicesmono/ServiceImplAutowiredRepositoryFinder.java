@@ -82,6 +82,7 @@ public class ServiceImplAutowiredRepositoryFinder {
                     });
                 } catch (Exception e) {
                     System.err.println("Parse error: " + f.getAbsolutePath());
+                    e.printStackTrace();
                 }
             }
         }

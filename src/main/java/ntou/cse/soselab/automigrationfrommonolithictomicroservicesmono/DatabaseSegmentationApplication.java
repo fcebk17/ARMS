@@ -9,6 +9,10 @@ import java.util.*;
 
 @SpringBootApplication
 public class DatabaseSegmentationApplication {
+
+    private static final Map<String, Map<String, List<String>>> controllerToServiceMap = new LinkedHashMap<>();
+    private static final Set<Map<String, List<String>>> serviceToRepositorySet = new LinkedHashSet<>();
+
     public static void main(String[] args) throws Exception {
 //        FileProcessingApplication application = new FileProcessingApplication();
 //        List<String> groupNames = application.getServiceName();
@@ -179,10 +183,11 @@ public class DatabaseSegmentationApplication {
                 String path = BASE_PATH + serviceName;
                 String controllerName = moduleName.substring(moduleName.lastIndexOf(".") + 1) + "Controller";
 
+                System.out.println("path: " + path);
                 // 找到 controller 路徑
                 ControllerPathFinder finder = new ControllerPathFinder(path);
                 String controllerPath = finder.getControllerDirectory();
-                System.out.println(controllerPath);
+                System.out.println("ControllerPath: " + controllerPath);
 
                 // 找 controller annotation
                 String controllerAnnotation = finder.getControllerAnnotationType();
@@ -271,5 +276,13 @@ public class DatabaseSegmentationApplication {
 
     public static Map<String, List<String>> getDuplicateRepoToServices() {
         return duplicateRepoToServices;
+    }
+
+    public static Map<String, Map<String, List<String>>> getControllerToServiceMap() {
+        return controllerToServiceMap;
+    }
+
+    public static Set<Map<String, List<String>>> getServiceToRepositorySet() {
+        return serviceToRepositorySet;
     }
 }

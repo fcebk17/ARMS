@@ -21,6 +21,7 @@ public class NoDuplicateRepositoryCleaner {
         for (Map.Entry<String, Set<String>> entry : serviceRepoMap.entrySet()) {
             String baseDir = basePath + entry.getKey(); // e.g., "CustomerService"
             Set<String> repositoriesToKeep = entry.getValue();
+            System.out.println("repositoryToKeep: " + repositoriesToKeep);
 
             Path rootPath = Paths.get(baseDir);
             if (!Files.exists(rootPath)) {
@@ -64,8 +65,7 @@ public class NoDuplicateRepositoryCleaner {
 
         String relativePath = absPath.replace(basePath + "/", "");
         String className = relativePath.replace(".java", "").replace("/", ".");
-
-        // 預設都是 com.app.repositories 下的 repository
-        return "com.app.repositories." + className.substring(className.lastIndexOf('.') + 1);
+        // 預設都是 com.app.repositories 下的 repository，這裡不能寫死，要改
+        return "my.projects.classroomschedulerapp.repository." + className.substring(className.lastIndexOf('.') + 1);
     }
 }
