@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-TW" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARMS - Assisted Refactoring for Microservices Segmentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #28624a 0%, #000000 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1rem;
+        }
+
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .microservices-container {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+
+        .microservice-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .microservice-item input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-add {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+        }
+
+        .btn-remove {
+            background: #f44336;
+            color: white;
+            min-width: 80px;
+        }
+
+        .btn-remove:hover {
+            background: #d32f2f;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .alert-success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .help-text {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>ARMS - Assisted Refactoring for Microservices Segmentation</h1>
+        <p>Automatically migration monolithic to microservices</p>
+    </div>
+
+    <div class="form-container">
+        <!-- 錯誤訊息 -->
+        <div th:if="${error}" class="alert alert-error">
+            <strong>error：</strong> <span th:text="${error}"></span>
+        </div>
+
+        <!-- 成功訊息 -->
+        <div th:if="${success}" class="alert alert-success">
+            <strong>success：</strong> <span th:text="${success}"></span>
+        </div>
+
+        <form id="configForm" action="/process" method="post">
+            <!-- 輸出路徑 -->
+            <div class="form-group">
+                <label for="basePath">📁 Output Path</label>
+                <input type="text" id="basePath" name="basePath"
+                       value="/home/popocorn/output_book_store/"
+                       placeholder="e.g.: /home/user/output/" required>
+                <div class="help-text">The root directory for the specified microservice's output
+                </div>
+            </div>
+
+            <!-- 原始專案路徑 -->
+            <div class="form-group">
+                <label for="sourceProjectPath">📂 Source Project Path</label>
+                <input type="text" id="sourceProjectPath" name="sourceProjectPath"
+                       value="/home/popocorn/test-project/book-store-api/src/main/java/com/example/bookstore_api"
+                       placeholder="e.g.: /path/to/your/project/src/main/java/com/example/app" required>
+                <div class="help-text">The main package path of the original monolithic application</div>
+            </div>
+
+            <!-- 微服務列表 -->
+            <div class="form-group">
+                <label>🚀 List of Microservices</label>
+                <div class="microservices-container">
+                    <div id="microservicesContainer">
+                        <div class="microservice-item">
+                            <input type="text" name="microservices" value="AccountService" placeholder="Microservices name" required>
+                            <button type="button" class="btn btn-remove" onclick="removeMicroservice(this)">remove</button>
+                        </div>
+                        <div class="microservice-item">
+                            <input type="text" name="microservices" value="ProductService" placeholder="Microservices name" required>
+                            <button type="button" class="btn btn-remove" onclick="removeMicroservice(this)">remove</button>
+                        </div>
+                        <div class="microservice-item">
+                            <input type="text" name="microservices" value="TransactionService" placeholder="Microservices name" required>
+                            <button type="button" class="btn btn-remove" onclick="removeMicroservice(this)">remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-add" onclick="addMicroservice()">+ Add Microservices</button>
+                    <div class="help-text">Each microservice will have its own independent data access layer.</div>
+                </div>
+            </div>
+
+            <!-- 提交按鈕 -->
+            <button type="submit" class="btn btn-submit">🚀 Start processing</button>
+        </form>
+
+        <!-- 載入動畫 -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Processing in progress, please wait...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addMicroservice() {
+        const container = document.getElementById('microservicesContainer');
+        const newItem = document.createElement('div');
+        newItem.className = 'microservice-item';
+        newItem.innerHTML = `
+                <input type="text" name="microservices" placeholder="Microservices name" required>
+                <button type="button" class="btn btn-remove" onclick="removeMicroservice(this)">remove</button>
+            `;
+        container.appendChild(newItem);
+    }
+
+    function removeMicroservice(button) {
+        const container = document.getElementById('microservicesContainer');
+        const items = container.querySelectorAll('.microservice-item');
+
+        // 至少保留一個微服務
+        if (items.length > 1) {
+            button.parentElement.remove();
+        } else {
+            alert('At least one microservice is required.！');
+        }
+    }
+
+    // 表單提交時顯示載入動畫
+    document.getElementById('configForm').addEventListener('submit', function(e) {
+        const loading = document.getElementById('loading');
+        const form = document.getElementById('configForm');
+
+        // 驗證至少有一個微服務
+        const microservices = document.querySelectorAll('input[name="microservices"]');
+        let hasValue = false;
+
+        for (let input of microservices) {
+            if (input.value.trim() !== '') {
+                hasValue = true;
+                break;
+            }
+        }
+
+        if (!hasValue) {
+            e.preventDefault();
+            alert('Please enter at least one microservice name！');
+            return;
+        }
+
+        // 顯示載入動畫
+        loading.style.display = 'block';
+        form.style.display = 'none';
+    });
+
+    // 頁面載入完成後檢查狀態
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+                console.log('System status:', data);
+            })
+            .catch(error => {
+                console.error('Unable to retrieve system status:', error);
+            });
+    });
+</script>
+</body>
+</html>
