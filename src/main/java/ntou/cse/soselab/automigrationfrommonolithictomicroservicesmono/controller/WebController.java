@@ -19,6 +19,11 @@ public class WebController {
         return "index";
     }
 
+    @GetMapping("/result")
+    public String result() {
+        return "result";
+    }
+
     @PostMapping("/process")
     public String processConfiguration(
             @RequestParam("basePath") String basePath,

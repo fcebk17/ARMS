@@ -67,11 +67,24 @@ public class ChatGptRefactorController {
     public String processRefactor(@ModelAttribute RefactorRequest request, Model model) {
         try {
             // 驗證輸入
-            if (request.getTargetServiceName().isEmpty() ||
-                    request.getDwspServiceName().isEmpty() ||
-                    request.getSourceServicePath().isEmpty() ||
-                    request.getRepositoryControllerPath().isEmpty()) {
+            if (request.getTargetServiceName() == null || request.getTargetServiceName().trim().isEmpty() ||
+                    request.getDwspServiceName() == null || request.getDwspServiceName().trim().isEmpty() ||
+                    request.getSourceServicePath() == null || request.getSourceServicePath().trim().isEmpty() ||
+                    request.getRepositoryControllerPath() == null || request.getRepositoryControllerPath().trim().isEmpty()) {
                 model.addAttribute("error", "所有必填欄位都必須填寫");
+                model.addAttribute("request", request);
+                return "chatgpt-refactor";
+            }
+
+            // 驗證檔案路徑是否存在
+            if (!java.nio.file.Files.exists(java.nio.file.Paths.get(request.getSourceServicePath()))) {
+                model.addAttribute("error", "找不到原始服務程式碼檔案: " + request.getSourceServicePath());
+                model.addAttribute("request", request);
+                return "chatgpt-refactor";
+            }
+
+            if (!java.nio.file.Files.exists(java.nio.file.Paths.get(request.getRepositoryControllerPath()))) {
+                model.addAttribute("error", "找不到 Repository Controller 程式碼檔案: " + request.getRepositoryControllerPath());
                 model.addAttribute("request", request);
                 return "chatgpt-refactor";
             }
@@ -79,12 +92,13 @@ public class ChatGptRefactorController {
             // 呼叫 ChatDemoRunner 進行重構
             String result = chatDemoRunner.runRefactorWithParameters(request);
 
-            model.addAttribute("success", "程式碼重構完成！");
+            model.addAttribute("success", "Code Refactoring Successful！");
             model.addAttribute("result", result);
             model.addAttribute("request", request);
             return "chatgpt-refactor-result";
 
         } catch (Exception e) {
+            e.printStackTrace(); // 用於 debug
             model.addAttribute("error", "重構過程發生錯誤: " + e.getMessage());
             model.addAttribute("request", request);
             return "chatgpt-refactor";
