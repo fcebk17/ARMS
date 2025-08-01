@@ -1,7 +1,6 @@
 package ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono;
 
 import lombok.Value;
-import ntou.cse.soselab.automigrationfrommonolithictomicroservicesmono.service.OpenAiService;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT Code Refactoring Tool</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #28624a 0%, #000000 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      font-weight: 300;
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .form-container {
+      padding: 40px;
+    }
+
+    .form-section {
+      margin-bottom: 40px;
+      padding: 25px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #FF6B6B;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      flex: 1;
+      margin-bottom: 20px;
+    }
+
+    .form-group.full-width {
+      flex: none;
+      width: 100%;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .form-group input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      resize: vertical;
+      min-height: 120px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.5;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #FF6B6B;
+      box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+    }
+
+    .help-text {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 5px;
+      font-style: italic;
+    }
+
+    .alert {
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .alert-error {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #ffcdd2;
+    }
+
+    .alert-success {
+      background: #e8f5e8;
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+    }
+
+    .btn {
+      padding: 15px 30px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+      color: white;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+      margin-right: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #545b62;
+      transform: translateY(-2px);
+    }
+
+    .navigation {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loading .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #FF6B6B;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .code-textarea {
+      font-family: 'Courier New', monospace;
+      background: #f8f9fa;
+      min-height: 200px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin: 10px;
+        border-radius: 10px;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .form-container {
+        padding: 20px;
+      }
+
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🤖 ChatGPT Code Refactoring Tool</h1>
+    <p>Automatically refactor microservice code using AI</p>
+  </div>
+
+  <div class="form-container">
+    <!-- Navigation -->
+    <div class="navigation">
+      <a href="/result" class="btn btn-secondary">← Back to Result</a>
+      <a href="/chatgpt/refactor" class="btn btn-secondary">🔄 Reset Configuration</a>
+    </div>
+
+    <!-- Error Messages -->
+    <div th:if="${error}" class="alert alert-error">
+      <strong>Error:</strong> <span th:text="${error}"></span>
+    </div>
+
+    <!-- Success Messages -->
+    <div th:if="${success}" class="alert alert-success">
+      <strong>Success:</strong> <span th:text="${success}"></span>
+    </div>
+
+    <form id="refactorForm" action="/chatgpt/refactor" method="post" th:object="${request}">
+
+      <!-- Basic Configuration -->
+      <div class="form-section">
+        <div class="section-title">
+          🎯 Basic Configuration
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="targetServiceName">Target Service Name</label>
+            <input type="text" id="targetServiceName" th:field="*{targetServiceName}"
+                   placeholder="e.g., TransactionService" required>
+            <div class="help-text">Name of the microservice to be refactored</div>
+          </div>
+
+          <div class="form-group">
+            <label for="dwspServiceName">DWSP Service Name</label>
+            <input type="text" id="dwspServiceName" th:field="*{dwspServiceName}"
+                   placeholder="e.g., ProductRepositoryService" required>
+            <div class="help-text">Database Wrapping Service Pattern service name</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="targetServicePort">Target Service Port</label>
+            <input type="text" id="targetServicePort" th:field="*{targetServicePort}"
+                   placeholder="e.g., 8890" required>
+          </div>
+
+          <div class="form-group">
+            <label for="dwspServicePort">DWSP Service Port</label>
+            <input type="text" id="dwspServicePort" th:field="*{dwspServicePort}"
+                   placeholder="e.g., 8891" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Microservice Architecture Description -->
+      <div class="form-section">
+        <div class="section-title">
+          🏗️ Microservice Architecture Description
+        </div>
+
+        <div class="form-group full-width">
+          <label for="microserviceDescription">Microservice Architecture Overview</label>
+          <textarea id="microserviceDescription" th:field="*{microserviceDescription}"
+                    placeholder="Describe your microservice architecture..." required></textarea>
+          <div class="help-text">Detailed description of Controllers and Repositories in each microservice</div>
+        </div>
+      </div>
+
+      <!-- Repository Relationship Explanation -->
+      <div class="form-section">
+        <div class="section-title">
+          🔗 Repository Relationship Explanation
+        </div>
+
+        <div class="form-group full-width">
+          <label for="repositoryExplanation">Repository Sharing Explanation</label>
+          <textarea id="repositoryExplanation" th:field="*{repositoryExplanation}"
+                    placeholder="Explain why API calls are needed..." required></textarea>
+          <div class="help-text">Explain the shared repository situation and the API call solution</div>
+        </div>
+      </div>
+
+      <!-- File Path Configuration -->
+      <div class="form-section">
+        <div class="section-title">
+          📁 File Path Configuration
+        </div>
+
+        <div class="form-group full-width">
+          <label for="sourceServicePath">Source Service Code Path</label>
+          <input type="text" id="sourceServicePath" th:field="*{sourceServicePath}"
+                 placeholder="/path/to/your/service/Service.java" required>
+          <div class="help-text">File path of the service layer code to be refactored</div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="repositoryControllerPath">Repository Controller Path</label>
+          <input type="text" id="repositoryControllerPath" th:field="*{repositoryControllerPath}"
+                 placeholder="/path/to/repository/controller/Controller.java" required>
+          <div class="help-text">File path of the DWSP service controller code</div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="outputPath">Output File Path</label>
+          <input type="text" id="outputPath" th:field="*{outputPath}"
+                 placeholder="/path/to/output/Service.java">
+          <div class="help-text">Output path for refactored code (optional, defaults to overwrite original)</div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn btn-submit">🚀 Start AI Refactoring</button>
+    </form>
+
+    <!-- Loading Animation -->
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Communicating with ChatGPT, please wait...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Show loading animation when form is submitted
+  document.getElementById('refactorForm').addEventListener('submit', function(e) {
+    const loading = document.getElementById('loading');
+    const form = document.getElementById('refactorForm');
+
+    // Show loading animation
+    loading.style.display = 'block';
+    form.style.display = 'none';
+  });
+
+  // Auto-adjust textarea height
+  document.querySelectorAll('textarea').forEach(textarea => {
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    });
+  });
+</script>
+</body>
+</html>
