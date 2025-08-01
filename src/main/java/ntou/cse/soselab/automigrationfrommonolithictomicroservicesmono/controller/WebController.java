@@ -30,7 +30,7 @@ public class WebController {
         try {
             // 驗證輸入
             if (basePath.isEmpty() || sourceProjectPath.isEmpty() || microservices.isEmpty()) {
-                model.addAttribute("error", "所有欄位都必須填寫");
+                model.addAttribute("error", "All fields are required");
                 return "index";
             }
 
@@ -38,12 +38,12 @@ public class WebController {
             DatabaseSegmentationResult result = processDatabaseSegmentation(basePath, sourceProjectPath, microservices);
 
             model.addAttribute("result", result);
-            model.addAttribute("success", "處理完成！");
+            model.addAttribute("success", "Processing completed！");
 
             return "result";
 
         } catch (Exception e) {
-            model.addAttribute("error", "處理過程發生錯誤: " + e.getMessage());
+            model.addAttribute("error", "An error occurred during processing: " + e.getMessage());
             return "index";
         }
     }
@@ -51,7 +51,7 @@ public class WebController {
     @GetMapping("/api/status")
     @ResponseBody
     public Map<String, String> getStatus() {
-        return Map.of("status", "ready", "message", "系統準備就緒");
+        return Map.of("status", "ready", "message", "System is ready");
     }
 
     private DatabaseSegmentationResult processDatabaseSegmentation(
@@ -59,10 +59,8 @@ public class WebController {
             String sourceProjectPath,
             List<String> microservices) throws Exception {
 
-        // 這裡整合你原本的邏輯
+        // 建立應用程式實例並呼叫處理方法
         DatabaseSegmentationApplicationZ app = new DatabaseSegmentationApplicationZ();
-
-        // 修改原本的 main 方法邏輯，讓它接受參數
         return app.processWithParameters(basePath, sourceProjectPath, microservices);
     }
 

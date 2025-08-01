@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>處理結果 - 微服務資料庫分割工具</title>
+  <title>ARMS - Processing Result</title>
   <style>
     * {
       margin: 0;
@@ -15,7 +15,7 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       line-height: 1.6;
       color: #333;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #28624a 0%, #000000 100%);
       min-height: 100vh;
       padding: 20px;
     }
@@ -224,23 +224,24 @@
 <body>
 <div class="container">
   <div class="header">
-    <h1>✅ 處理完成</h1>
-    <p>微服務資料庫分割結果</p>
+    <h1>✅ Processing completed</h1>
+    <p>Microservice database segmentation results
+    </p>
   </div>
 
   <div class="content">
     <div class="alert-success" th:if="${success}">
-      <strong>🎉 成功！</strong> <span th:text="${success}"></span>
+      <strong>🎉 success！</strong> <span th:text="${success}"></span>
     </div>
 
     <!-- Controller到Service的映射 -->
     <div class="result-section">
       <div class="section-header">
-        <h2>🎯 Controller 到 Service 映射</h2>
+        <h2>🎯 Controller to Service Mapping</h2>
       </div>
       <div class="section-content">
         <div th:each="microservice : ${result.controllerToServiceMap}" class="card">
-          <h3 th:text="${microservice.key}">微服務名稱</h3>
+          <h3 th:text="${microservice.key}">Microservice name</h3>
           <ul class="mapping-list">
             <li th:each="controller : ${microservice.value}">
               <strong th:text="${controller.key}">Controller</strong> →
@@ -254,25 +255,27 @@
     <!-- 介面到實作的映射 -->
     <div class="result-section">
       <div class="section-header">
-        <h2>🔗 介面到實作類別映射</h2>
+        <h2>🔗 Interface to Implementation Mapping</h2>
       </div>
       <div class="section-content">
-        <button class="toggle-btn" onclick="toggleDetail('interface-impl-detail')">顯示/隱藏詳細資訊</button>
+        <button class="toggle-btn" onclick="toggleDetail('interface-impl-detail')">Show/Hide details</button>
         <div id="interface-impl-detail" class="json-view" style="display: none;">
-          <pre th:text="${#maps.toString(result.interfaceToImplementationMap)}">介面映射資料</pre>
+          <div th:each="mapping : ${result.interfaceToImplementationMap}">
+            <strong th:text="${mapping.key}">Interface</strong> → <span th:text="${mapping.value}">Implementation</span><br/>
+          </div>
         </div>
-        <p><strong>總共找到 <span th:text="${#maps.size(result.interfaceToImplementationMap)}">0</span> 個介面映射</strong></p>
+        <p><strong>Total found <span th:text="${#maps.size(result.interfaceToImplementationMap)}">0</span> interface mappings found</strong></p>
       </div>
     </div>
 
     <!-- 微服務到Repository的映射 -->
     <div class="result-section">
       <div class="section-header">
-        <h2>🗄️ 微服務到 Repository 映射</h2>
+        <h2>🗄️ Microservices to Repository mapping</h2>
       </div>
       <div class="section-content">
         <div th:each="microservice : ${result.microserviceToRepositoryMap}" class="card">
-          <h3 th:text="${microservice.key}">微服務名稱</h3>
+          <h3 th:text="${microservice.key}">Microservices name</h3>
           <div>
             <span th:each="repo : ${microservice.value}" class="repository-item" th:text="${repo}">Repository</span>
           </div>
@@ -283,22 +286,22 @@
     <!-- 重複Repository檢查結果 -->
     <div class="result-section">
       <div class="section-header">
-        <h2>⚠️ Repository 重複檢查</h2>
+        <h2>⚠️ Repository duplication check</h2>
       </div>
       <div class="section-content">
         <div th:if="${result.hasDuplicateRepositories}" class="duplicate-warning">
-          <strong>⚠️ 發現重複的 Repository！</strong>
-          <p>以下 Repository 被多個微服務使用，系統將自動建立專用的 Controller：</p>
+          <strong>⚠️ Duplicate repository found！</strong>
+          <p>The following repositories are used by multiple microservices. The system will automatically create a dedicated controller for them：</p>
           <div th:each="duplicate : ${result.duplicateRepositories}" class="card">
-            <h4 th:text="${duplicate.key}">Repository 名稱</h4>
-            <p>被以下微服務使用：
+            <h4 th:text="${duplicate.key}">Repository name</h4>
+            <p>Used by the following microservices：
               <span th:each="service : ${duplicate.value}" class="repository-item" th:text="${service}">Service</span>
             </p>
           </div>
         </div>
         <div th:unless="${result.hasDuplicateRepositories}" class="no-duplicate-info">
-          <strong>✅ 沒有發現重複的 Repository</strong>
-          <p>所有 Repository 都已正確分配到各自的微服務中，可以直接進行清理作業。</p>
+          <strong>✅ No duplicate repositories found.</strong>
+          <p>All repositories have been correctly assigned to their respective microservices. Cleanup can proceed directly</p>
         </div>
       </div>
     </div>
@@ -306,23 +309,60 @@
     <!-- 詳細結果數據 -->
     <div class="result-section">
       <div class="section-header">
-        <h2>📊 詳細結果數據</h2>
+        <h2>📊 Detailed result data</h2>
       </div>
       <div class="section-content">
-        <button class="toggle-btn" onclick="toggleDetail('raw-data')">顯示/隱藏原始數據</button>
+        <button class="toggle-btn" onclick="toggleDetail('raw-data')">Show/Hide raw data</button>
         <div id="raw-data" class="json-view" style="display: none;">
-          <h4>Controller到Service映射：</h4>
-          <pre th:text="${#maps.toString(result.controllerToServiceMap)}">Controller映射數據</pre>
+          <h4>Controller to Service Mapping：</h4>
+<!--          <div th:each="microservice : ${result.controllerToServiceMap}">-->
+<!--            <strong th:text="${microservice.key}">Microservices</strong>:<br/>-->
+<!--            <div th:each="controller : ${microservice.value}" style="margin-left: 20px;">-->
+<!--              &nbsp;&nbsp;<span th:text="${controller.key}">Controller</span> →-->
+<!--              <span th:each="service, iterStat : ${controller.value}">-->
+<!--                                    <span th:text="${service}">Service</span>-->
+<!--                                    <span th:if="${!iterStat.last}">, </span>-->
+<!--                                </span><br/>-->
+<!--            </div>-->
+<!--            <br/>-->
+<!--          </div>-->
+          <div th:each="microservice : ${result.controllerToServiceMap}" style="margin-bottom: 25px;">
+            <div style="font-weight: bold; font-size: 1.1em; color: #4CAF50; margin-bottom: 10px;" th:text="${microservice.key}">微服務</div>
 
-          <h4>微服務到Repository映射：</h4>
-          <pre th:text="${#maps.toString(result.microserviceToRepositoryMap)}">Repository映射數據</pre>
+            <div th:each="controller : ${microservice.value}" style="margin-left: 15px; margin-bottom: 15px;">
+              <div style="font-weight: 600; color: #333; margin-bottom: 5px;">
+                <span th:text="${controller.key}">Controller</span> <span style="color: #666;">contains</span>
+              </div>
+              <div th:each="service : ${controller.value}" style="margin-left: 20px; margin-bottom: 3px; color: #555;">
+                → <span th:text="${service}" style="font-family: monospace; background: #f0f0f0; padding: 2px 5px; border-radius: 3px;">Service</span>
+              </div>
+            </div>
+          </div>
+
+          <h4>Microservices to Repository Mapping：</h4>
+<!--          <div th:each="microservice : ${result.microserviceToRepositoryMap}">-->
+<!--            <strong th:text="${microservice.key}">Microservices</strong>:-->
+<!--            <span th:each="repo, iterStat : ${microservice.value}">-->
+<!--                                <span th:text="${repo}">Repository</span>-->
+<!--                                <span th:if="${!iterStat.last}">, </span>-->
+<!--                            </span><br/>-->
+<!--          </div>-->
+          <div th:each="microservice : ${result.microserviceToRepositoryMap}" style="margin-bottom: 15px;">
+            <div style="font-weight: bold; color: #4CAF50; margin-bottom: 5px;" th:text="${microservice.key}">微服務</div>
+            <div style="margin-left: 15px;">
+                                <span th:each="repo, iterStat : ${microservice.value}">
+                                    <span th:text="${repo}" style="font-family: monospace; background: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 3px; margin: 2px;">Repository</span>
+                                    <span th:if="${!iterStat.last}">, </span>
+                                </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="actions">
-      <a href="/" class="btn btn-primary">🔄 重新處理</a>
-      <button class="btn btn-secondary" onclick="window.print()">🖨️ 列印結果</button>
+      <a href="/" class="btn btn-primary">🔄 Reprocess</a>
+      <button class="btn btn-secondary" onclick="window.print()">🖨️ Print results</button>
     </div>
   </div>
 </div>
@@ -339,7 +379,7 @@
 
   // 頁面載入完成後的處理
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('結果頁面載入完成');
+    console.log('Results page loaded successfully.');
 
     // 自動捲動到頂部
     window.scrollTo(0, 0);
